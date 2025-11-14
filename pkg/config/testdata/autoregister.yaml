@@ -1,0 +1,6 @@
+agents:
+  root:
+    model: openai/gpt-4o
+
+  other:
+    model: anthropic/claude-sonnet-4-0

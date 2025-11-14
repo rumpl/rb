@@ -1,0 +1,113 @@
+version: "2"
+run:
+  tests: true
+linters:
+  enable:
+    - containedctx
+    - copyloopvar
+    - depguard
+    - errcheck
+    - ginkgolinter
+    - gocritic
+    - govet
+    - importas # Enforces consistent import aliases.
+    - ineffassign
+    - intrange
+    - misspell
+    - nakedret
+    - nolintlint
+    - revive
+    - staticcheck
+    - testifylint
+    - thelper
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - forbidigo
+    - iotamixing
+    - gochecknoinits
+  settings:
+    forbidigo:
+      forbid:
+        - pattern: context\.Background()
+          msg: "do not use context.Background() in tests, use t.Context()"
+        - pattern: context\.TODO()
+          msg: "do not use context.TODO() in tests, use t.Context()"
+        - pattern: os\.MkdirTemp()
+          msg: "do not use os.MkdirTemp() in tests, use t.TempDir()"
+        - pattern: os\.Setenv()
+          msg: "do not use os.Setenv() in tests, use t.Setenv()"
+        - pattern: fmt\.Print.*()
+          msg: "do not use fmt.Print() or fmt.Println() in tests"
+    depguard:
+      rules:
+        internal:
+          files:
+            - "**/*.go"
+          deny:
+            - pkg: github.com/rumpl/rb/internal
+              desc: don't use /internal/ from /pkg/
+        old_yaml:
+          files:
+            - "**/*.go"
+          deny:
+            - pkg: gopkg.in/yaml.v3
+              desc: don't use deprecated gopkg.in/yaml.v3, use github.com/goccy/go-yaml instead
+        testify_is_for_tests:
+          files:
+            - "**/*.go"
+            - "!**/*_test.go"
+          deny:
+            - pkg: github.com/stretchr/testify
+              desc: don't use testify in production code
+    gocritic:
+      disabled-checks:
+        - dupImport
+        - hugeParam
+        - rangeValCopy
+        - unnamedResult
+        - appendAssign
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - checkPrivateReceivers
+        - name: package-comments
+          disabled: false
+    staticcheck:
+      checks:
+        - all
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - std-error-handling
+    rules:
+      - path-except: _test\.go
+        linters:
+          - forbidigo
+issues:
+  max-same-issues: 3
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+  settings:
+    gci:
+      custom-order: true
+      sections:
+        - standard
+        - default
+        - prefix(github.com/rumpl/rb)
+    gofmt:
+      rewrite-rules:
+        - pattern: 'interface{}'
+          replacement: 'any'
+    gofumpt:
+      extra-rules: true

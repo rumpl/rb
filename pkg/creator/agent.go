@@ -1,0 +1,226 @@
+package creator
+
+import (
+	"context"
+	_ "embed"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/rumpl/rb/pkg/agent"
+	"github.com/rumpl/rb/pkg/config"
+	latest "github.com/rumpl/rb/pkg/config/v2"
+	"github.com/rumpl/rb/pkg/environment"
+	"github.com/rumpl/rb/pkg/model/provider"
+	"github.com/rumpl/rb/pkg/model/provider/anthropic"
+	"github.com/rumpl/rb/pkg/model/provider/options"
+	"github.com/rumpl/rb/pkg/runtime"
+	"github.com/rumpl/rb/pkg/session"
+	"github.com/rumpl/rb/pkg/team"
+	"github.com/rumpl/rb/pkg/tools"
+	"github.com/rumpl/rb/pkg/tools/builtin"
+)
+
+//go:embed instructions.txt
+var agentBuilderInstructions string
+
+type fsToolset struct {
+	tools.ElicitationTool
+
+	inner                    tools.ToolSet
+	originalWriteFileHandler tools.ToolHandler
+	path                     string
+}
+
+func (f *fsToolset) Instructions() string {
+	return f.inner.Instructions()
+}
+
+func (f *fsToolset) Start(ctx context.Context) error {
+	return f.inner.Start(ctx)
+}
+
+func (f *fsToolset) Stop(ctx context.Context) error {
+	return f.inner.Stop(ctx)
+}
+
+func (f *fsToolset) Tools(ctx context.Context) ([]tools.Tool, error) {
+	innerTools, err := f.inner.Tools(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, tool := range innerTools {
+		if tool.Name == builtin.ToolNameWriteFile {
+			f.originalWriteFileHandler = tool.Handler
+			innerTools[i].Handler = f.customWriteFileHandler
+		}
+	}
+
+	return innerTools, nil
+}
+
+func (f *fsToolset) customWriteFileHandler(ctx context.Context, toolCall tools.ToolCall) (*tools.ToolCallResult, error) {
+	var args struct {
+		Path    string `json:"path"`
+		Content string `json:"content"`
+	}
+	if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
+		return nil, fmt.Errorf("failed to parse arguments: %w", err)
+	}
+
+	f.path = args.Path
+
+	return f.originalWriteFileHandler(ctx, toolCall)
+}
+
+func CreateAgent(ctx context.Context, baseDir, prompt string, runConfig config.RuntimeConfig) (out, path string, err error) {
+	llm, err := anthropic.NewClient(
+		ctx,
+		&latest.ModelConfig{
+			Provider:  "anthropic",
+			Model:     "claude-sonnet-4-0",
+			MaxTokens: 64000,
+		},
+		environment.NewDefaultProvider(),
+		options.WithGateway(runConfig.ModelsGateway),
+	)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create LLM client: %w", err)
+	}
+
+	slog.Info("Generating agent configuration....")
+
+	fsToolset := fsToolset{inner: builtin.NewFilesystemTool([]string{baseDir})}
+	fileName := filepath.Base(fsToolset.path)
+	newTeam := team.New(
+		team.WithID(fileName),
+		team.WithAgents(
+			agent.New(
+				"root",
+				agentBuilderInstructions,
+				agent.WithModel(llm),
+				agent.WithToolSets(
+					builtin.NewShellTool(os.Environ()),
+					&fsToolset,
+				),
+			)))
+	rt, err := runtime.New(newTeam)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create runtime: %w", err)
+	}
+
+	sess := session.New(
+		session.WithUserMessage("", prompt),
+		session.WithToolsApproved(true),
+	)
+
+	messages, err := rt.Run(ctx, sess)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to run session: %w", err)
+	}
+
+	return messages[len(messages)-1].Message.Content, fsToolset.path, nil
+}
+
+func Agent(ctx context.Context, baseDir string, runConfig config.RuntimeConfig, providerName string, maxTokensOverride int, modelNameOverride string) (*team.Team, error) {
+	defaultModels := map[string]string{
+		"openai":    "gpt-5-mini",
+		"anthropic": "claude-sonnet-4-0",
+		"google":    "gemini-2.5-flash",
+		"dmr":       "ai/qwen3:latest",
+	}
+	var modelName string
+	if _, ok := defaultModels[providerName]; ok {
+		modelName = defaultModels[providerName]
+	} else {
+		modelName = defaultModels["anthropic"]
+	}
+
+	if modelNameOverride != "" {
+		modelName = modelNameOverride
+	} else {
+		slog.Info("Using default model: " + modelName)
+	}
+
+	// If not using a model gateway, avoid selecting a provider the user can't run
+	var usableProviders []string
+	if runConfig.ModelsGateway == "" {
+		if os.Getenv("OPENAI_API_KEY") != "" {
+			usableProviders = append(usableProviders, "openai")
+		}
+		if os.Getenv("ANTHROPIC_API_KEY") != "" {
+			usableProviders = append(usableProviders, "anthropic")
+		}
+		if os.Getenv("GOOGLE_API_KEY") != "" {
+			usableProviders = append(usableProviders, "google")
+		}
+		if os.Getenv("MISTRAL_API_KEY") != "" {
+			usableProviders = append(usableProviders, "mistral")
+		}
+		// DMR runs locally by default; include it when not using a gateway
+		usableProviders = append(usableProviders, "dmr")
+	}
+
+	fsToolset := fsToolset{inner: builtin.NewFilesystemTool([]string{baseDir})}
+	fileName := filepath.Base(fsToolset.path)
+
+	// Provide soft guidance to prefer the selected providers
+	instructions := agentBuilderInstructions + "\n\nPreferred model providers to use: " + strings.Join(usableProviders, ", ") + ". You must always use one or more of the following model configurations: \n"
+	for _, provider := range usableProviders {
+		suggestedMaxTokens := 64000
+		if provider == "dmr" {
+			suggestedMaxTokens = 16000
+		}
+		instructions += fmt.Sprintf(`
+		models:
+			%s:
+				provider: %s
+				model: %s
+				max_tokens: %d\n`, provider, provider, defaultModels[provider], suggestedMaxTokens)
+	}
+
+	// Use 16k for DMR to limit memory costs
+	maxTokens := 64000
+	if providerName == "dmr" {
+		maxTokens = 16000
+	}
+	if maxTokensOverride > 0 {
+		maxTokens = maxTokensOverride
+	}
+
+	llm, err := provider.New(
+		ctx,
+		&latest.ModelConfig{
+			Provider:  providerName,
+			Model:     modelName,
+			MaxTokens: maxTokens,
+		},
+		environment.NewDefaultProvider(),
+		options.WithGateway(runConfig.ModelsGateway),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create LLM client: %w", err)
+	}
+
+	newTeam := team.New(
+		team.WithID(fileName),
+		team.WithAgents(
+			agent.New(
+				"root",
+				instructions,
+				agent.WithModel(llm),
+				agent.WithWelcomeMessage(`Hello! I'm here to create agents for you.
+				
+Can you explain to me what the agent will be used for?`),
+				agent.WithToolSets(
+					builtin.NewShellTool(os.Environ()),
+					&fsToolset,
+				),
+			)))
+
+	return newTeam, nil
+}

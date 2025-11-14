@@ -1,0 +1,10 @@
+version: "0"
+
+agents:
+  root:
+    model: gpt
+
+models:
+  gpt:
+    type: openai
+    model: gpt-4o

@@ -1,0 +1,228 @@
+package runtime
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+
+	"github.com/rumpl/rb/pkg/api"
+	"github.com/rumpl/rb/pkg/chat"
+	latest "github.com/rumpl/rb/pkg/config/v2"
+	"github.com/rumpl/rb/pkg/session"
+	"github.com/rumpl/rb/pkg/team"
+)
+
+// RemoteRuntime implements the Interface using a remote client
+type RemoteRuntime struct {
+	client        *Client
+	currentAgent  string
+	agentFilename string
+	sessionID     string
+	team          *team.Team
+}
+
+// RemoteRuntimeOption is a function for configuring the RemoteRuntime
+type RemoteRuntimeOption func(*RemoteRuntime)
+
+// WithRemoteCurrentAgent sets the current agent name
+func WithRemoteCurrentAgent(agentName string) RemoteRuntimeOption {
+	return func(r *RemoteRuntime) {
+		r.currentAgent = agentName
+	}
+}
+
+// WithRemoteAgentFilename sets the agent filename to use with the remote API
+func WithRemoteAgentFilename(filename string) RemoteRuntimeOption {
+	return func(r *RemoteRuntime) {
+		r.agentFilename = filename
+	}
+}
+
+// NewRemoteRuntime creates a new remote runtime that implements the Interface
+func NewRemoteRuntime(client *Client, opts ...RemoteRuntimeOption) (*RemoteRuntime, error) {
+	if client == nil {
+		return nil, fmt.Errorf("client cannot be nil")
+	}
+
+	r := &RemoteRuntime{
+		client:        client,
+		currentAgent:  "root",
+		agentFilename: "agent.yaml", // default
+		team:          team.New(),   // empty team, will be populated as needed
+	}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r, nil
+}
+
+// CurrentAgentName returns the name of the currently active agent
+func (r *RemoteRuntime) CurrentAgentName() string {
+	return r.currentAgent
+}
+
+func (r *RemoteRuntime) CurrentAgentCommands(ctx context.Context) map[string]string {
+	return r.readCurrentAgentConfig(ctx).Commands
+}
+
+func (r *RemoteRuntime) CurrentWelcomeMessage(ctx context.Context) string {
+	return r.readCurrentAgentConfig(ctx).WelcomeMessage
+}
+
+func (r *RemoteRuntime) readCurrentAgentConfig(ctx context.Context) latest.AgentConfig {
+	cfg, err := r.client.GetAgent(ctx, r.agentFilename)
+	if err != nil {
+		return latest.AgentConfig{}
+	}
+
+	for agentName, agent := range cfg.Agents {
+		if agentName == r.currentAgent {
+			return agent
+		}
+	}
+
+	return latest.AgentConfig{}
+}
+
+// RunStream starts the agent's interaction loop and returns a channel of events
+func (r *RemoteRuntime) RunStream(ctx context.Context, sess *session.Session) <-chan Event {
+	slog.Debug("Starting remote runtime stream", "agent", r.currentAgent, "session_id", r.sessionID)
+	events := make(chan Event, 128)
+
+	go func() {
+		defer close(events)
+
+		// Convert session messages to remote.Message format
+		messages := r.convertSessionMessages(sess)
+
+		r.sessionID = sess.ID
+
+		// Start streaming from remote client
+		var streamChan <-chan Event
+		var err error
+
+		if r.currentAgent != "" && r.currentAgent != "root" {
+			streamChan, err = r.client.RunAgentWithAgentName(ctx, r.sessionID, r.agentFilename, r.currentAgent, messages)
+		} else {
+			streamChan, err = r.client.RunAgent(ctx, r.sessionID, r.agentFilename, messages)
+		}
+
+		if err != nil {
+			events <- Error(fmt.Sprintf("failed to start remote agent: %v", err))
+			return
+		}
+
+		for streamEvent := range streamChan {
+			events <- streamEvent
+		}
+	}()
+
+	return events
+}
+
+// Run starts the agent's interaction loop and returns the final messages
+func (r *RemoteRuntime) Run(ctx context.Context, sess *session.Session) ([]session.Message, error) {
+	eventsChan := r.RunStream(ctx, sess)
+
+	for event := range eventsChan {
+		if errEvent, ok := event.(*ErrorEvent); ok {
+			return nil, fmt.Errorf("%s", errEvent.Error)
+		}
+	}
+
+	return sess.GetAllMessages(), nil
+}
+
+// Resume allows resuming execution after user confirmation
+func (r *RemoteRuntime) Resume(ctx context.Context, confirmationType ResumeType) {
+	slog.Debug("Resuming remote runtime", "agent", r.currentAgent, "confirmation_type", confirmationType, "session_id", r.sessionID)
+
+	if r.sessionID == "" {
+		slog.Error("Cannot resume: no session ID available")
+		return
+	}
+
+	if err := r.client.ResumeSession(ctx, r.sessionID, string(confirmationType)); err != nil {
+		slog.Error("Failed to resume remote session", "error", err, "session_id", r.sessionID)
+	}
+}
+
+// Summarize generates a summary for the session
+func (r *RemoteRuntime) Summarize(_ context.Context, sess *session.Session, events chan Event) {
+	slog.Debug("Summarize not yet implemented for remote runtime", "session_id", r.sessionID)
+	// TODO: Implement summarization by either:
+	// 1. Adding a summarization endpoint to the remote API
+	// 2. Running a summarization agent through the remote client
+	events <- SessionSummary(sess.ID, "Summary generation not yet implemented for remote runtime", r.currentAgent)
+}
+
+// convertSessionMessages converts session messages to remote API message format
+func (r *RemoteRuntime) convertSessionMessages(sess *session.Session) []api.Message {
+	sessionMessages := sess.GetAllMessages()
+	messages := make([]api.Message, 0, len(sessionMessages))
+
+	for i := range sessionMessages {
+		// Only include user and assistant messages for the remote API
+		if sessionMessages[i].Message.Role == chat.MessageRoleUser || sessionMessages[i].Message.Role == chat.MessageRoleAssistant {
+			messages = append(messages, api.Message{
+				Role:    sessionMessages[i].Message.Role,
+				Content: sessionMessages[i].Message.Content,
+			})
+		}
+	}
+
+	return messages
+}
+
+// ResumeStartAuthorizationFlow allows resuming execution after user confirmation
+func (r *RemoteRuntime) ResumeStartAuthorizationFlow(ctx context.Context, confirmationType bool) {
+	slog.Debug("Resuming remote runtime", "agent", r.currentAgent, "confirmation_type", confirmationType, "session_id", r.sessionID)
+
+	if r.sessionID == "" {
+		slog.Error("Cannot resume: no session ID available")
+		return
+	}
+
+	if err := r.client.ResumeStartAuthorizationFlow(ctx, r.sessionID, confirmationType); err != nil {
+		slog.Error("Failed to resume remote session", "error", err, "session_id", r.sessionID)
+	}
+}
+
+// ResumeCodeReceived allows resuming execution after user confirmation
+func (r *RemoteRuntime) ResumeCodeReceived(ctx context.Context, code, state string) error {
+	slog.Debug("Resuming remote runtime", "agent", r.currentAgent, "code", code, "state", state, "session_id", r.sessionID)
+
+	if r.sessionID == "" {
+		slog.Error("Cannot resume: no session ID available")
+		return fmt.Errorf("session ID cannot be empty")
+	}
+
+	if err := r.client.ResumeCodeReceived(ctx, code, state); err != nil {
+		slog.Error("Failed to resume remote session", "error", err, "session_id", r.sessionID)
+		return err
+	}
+
+	return nil
+}
+
+// ResumeElicitation sends an elicitation response back to a waiting elicitation request
+func (r *RemoteRuntime) ResumeElicitation(ctx context.Context, action string, content map[string]any) error {
+	slog.Debug("Resuming remote runtime with elicitation response", "agent", r.currentAgent, "action", action, "session_id", r.sessionID)
+
+	if r.sessionID == "" {
+		slog.Error("Cannot resume: no session ID available")
+		return fmt.Errorf("session ID cannot be empty")
+	}
+
+	if err := r.client.ResumeElicitation(ctx, action, content); err != nil {
+		slog.Error("Failed to resume remote session with elicitation", "error", err, "session_id", r.sessionID)
+		return err
+	}
+
+	return nil
+}
+
+// Verify that RemoteRuntime implements the Interface
+var _ Runtime = (*RemoteRuntime)(nil)

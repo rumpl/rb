@@ -1,0 +1,18 @@
+version: "0"
+
+agents:
+  root:
+    model: gpt
+    description: Create a biography of the user based on internet searches.
+    instruction: Your goal is to present the user with a concise and informative biography based on their online presence.
+    todo:
+      shared: true
+    toolsets:
+      - type: mcp
+        command: docker
+        args: ["mcp", "gateway", "run", "--servers=fetch"]
+
+models:
+  gpt:
+    type: openai
+    model: gpt-4o

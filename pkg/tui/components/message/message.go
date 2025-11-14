@@ -1,0 +1,163 @@
+package message
+
+import (
+	"fmt"
+	"regexp"
+	"strings"
+
+	tea "charm.land/bubbletea/v2"
+
+	"github.com/rumpl/rb/pkg/tui/components/markdown"
+	"github.com/rumpl/rb/pkg/tui/components/spinner"
+	"github.com/rumpl/rb/pkg/tui/core/layout"
+	"github.com/rumpl/rb/pkg/tui/styles"
+	"github.com/rumpl/rb/pkg/tui/types"
+)
+
+// Model represents a view that can render a message
+type Model interface {
+	layout.Model
+	layout.Sizeable
+	SetMessage(msg *types.Message)
+}
+
+// messageModel implements Model
+type messageModel struct {
+	message *types.Message
+	width   int
+	height  int
+	focused bool
+	spinner spinner.Spinner
+}
+
+// New creates a new message view
+func New(msg *types.Message) *messageModel {
+	return &messageModel{
+		message: msg,
+		width:   80, // Default width
+		height:  1,  // Will be calculated
+		focused: false,
+		spinner: spinner.New(spinner.ModeBoth),
+	}
+}
+
+// Bubble Tea Model methods
+
+// Init initializes the message view
+func (mv *messageModel) Init() tea.Cmd {
+	if mv.message.Type == types.MessageTypeSpinner {
+		return mv.spinner.Tick()
+	}
+	return nil
+}
+
+func (mv *messageModel) SetMessage(msg *types.Message) {
+	mv.message = msg
+}
+
+// Update handles messages and updates the message view state
+func (mv *messageModel) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
+	if mv.message.Type == types.MessageTypeSpinner {
+		s, cmd := mv.spinner.Update(msg)
+		mv.spinner = s.(spinner.Spinner)
+		return mv, cmd
+	}
+	return mv, nil
+}
+
+// View renders the message view
+func (mv *messageModel) View() string {
+	return mv.Render(mv.width)
+}
+
+// Render renders the message view content
+func (mv *messageModel) Render(width int) string {
+	msg := mv.message
+	switch msg.Type {
+	case types.MessageTypeSpinner:
+		return mv.spinner.View()
+	case types.MessageTypeUser:
+		return styles.UserMessageBorderStyle.Width(width - 1).Render(msg.Content)
+	case types.MessageTypeAssistant:
+		if msg.Content == "" {
+			return mv.spinner.View()
+		}
+
+		rendered, err := markdown.NewRenderer(width).Render(msg.Content)
+		if err != nil {
+			return senderPrefix(msg.Sender) + msg.Content
+		}
+
+		return senderPrefix(msg.Sender) + strings.TrimRight(rendered, "\n\r\t ")
+	case types.MessageTypeAssistantReasoning:
+		if msg.Content == "" {
+			return mv.spinner.View()
+		}
+		// Render through the markdown renderer to ensure proper wrapping to width
+		rendered, err := markdown.NewRenderer(width).Render(msg.Content)
+		if err != nil {
+			text := "Thinking: " + senderPrefix(msg.Sender) + msg.Content
+			return styles.MutedStyle.Italic(true).Render(text)
+		}
+		// Strip ANSI from inner rendering so muted style fully applies
+		clean := stripANSI(strings.TrimRight(rendered, "\n\r\t "))
+		thinkingText := "Thinking: " + senderPrefix(msg.Sender) + clean
+		return styles.MutedStyle.Italic(true).Render(thinkingText)
+	case types.MessageTypeShellOutput:
+		if rendered, err := markdown.NewRenderer(width).Render(fmt.Sprintf("```console\n%s\n```", msg.Content)); err == nil {
+			return strings.TrimRight(rendered, "\n\r\t ")
+		}
+		return msg.Content
+	case types.MessageTypeCancelled:
+		return styles.WarningStyle.Render("⚠ stream cancelled ⚠")
+	case types.MessageTypeWelcome:
+		// Render welcome message with a distinct style
+		rendered, err := markdown.NewRenderer(width).Render(msg.Content)
+		if err != nil {
+			return styles.MutedStyle.Render(msg.Content)
+		}
+		return styles.MutedStyle.Render(strings.TrimRight(rendered, "\n\r\t "))
+	case types.MessageTypeError:
+		return styles.ErrorStyle.Render("│ " + msg.Content)
+	default:
+		return msg.Content
+	}
+}
+
+func senderPrefix(sender string) string {
+	if sender == "" {
+		return ""
+	}
+	return styles.AgentBadgeStyle.Render("["+sender+"]") + "\n\n"
+}
+
+// Height calculates the height needed for this message view
+func (mv *messageModel) Height(width int) int {
+	content := mv.Render(width)
+	return strings.Count(content, "\n") + 1
+}
+
+// Message returns the underlying message
+func (mv *messageModel) Message() *types.Message {
+	return mv.message
+}
+
+// Layout.Sizeable methods
+
+// SetSize sets the dimensions of the message view
+func (mv *messageModel) SetSize(width, height int) tea.Cmd {
+	mv.width = width
+	mv.height = height
+	return nil
+}
+
+// GetSize returns the current dimensions
+func (mv *messageModel) GetSize() (width, height int) {
+	return mv.width, mv.height
+}
+
+var ansiEscape = regexp.MustCompile("\x1b\\[[0-9;]*m")
+
+func stripANSI(s string) string {
+	return ansiEscape.ReplaceAllString(s, "")
+}

@@ -1,0 +1,15 @@
+version: "0"
+
+agents:
+  root:
+    model: gpt
+    todo: true
+    toolsets:
+      - type: mcp
+        command: docker
+        args: ["mcp", "gateway", "run", "--servers=fetch"]
+
+models:
+  gpt:
+    type: openai
+    model: gpt-4o

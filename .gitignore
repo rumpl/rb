@@ -1,0 +1,17 @@
+bin
+dist
+.task
+.DS_Store
+evals
+*.db
+/rb
+.crush
+.vscode
+
+# agents
+agent.yaml
+vendor
+
+# Local environment files
+.env.local
+.claude/settings.local.json
