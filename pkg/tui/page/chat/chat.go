@@ -343,22 +343,32 @@ func (p *chatPage) View() string {
 	var bodyContent string
 
 	if p.width >= minWindowWidth {
-		chatWidth := innerWidth - sidebarWidth
+		// Left side: messages and editor stacked vertically
+		leftWidth := innerWidth - sidebarWidth
 
 		chatView := styles.ChatStyle.
 			Height(p.chatHeight).
-			Width(chatWidth).
+			Width(leftWidth).
 			Render(p.messages.View())
 
+		input := p.editor.View()
+
+		leftContent := lipgloss.JoinVertical(
+			lipgloss.Left,
+			chatView,
+			input,
+		)
+
+		// Right side: sidebar
 		sidebarView := lipgloss.NewStyle().
 			Width(sidebarWidth).
-			Height(p.chatHeight).
+			Height(p.height).
 			Align(lipgloss.Left, lipgloss.Top).
 			Render(p.sidebar.View())
 
 		bodyContent = lipgloss.JoinHorizontal(
 			lipgloss.Left,
-			chatView,
+			leftContent,
 			sidebarView,
 		)
 	} else {
@@ -375,26 +385,19 @@ func (p *chatPage) View() string {
 			Align(lipgloss.Left, lipgloss.Top).
 			Render(p.sidebar.View())
 
+		input := p.editor.View()
+
 		bodyContent = lipgloss.JoinVertical(
 			lipgloss.Top,
 			sidebarView,
 			chatView,
+			input,
 		)
 	}
 
-	// Input field spans full width below everything
-	input := p.editor.View()
-
-	// Create a full-height layout with header, body, and input
-	content := lipgloss.JoinVertical(
-		lipgloss.Left,
-		bodyContent,
-		input,
-	)
-
 	return styles.AppStyle.
 		Height(p.height).
-		Render(content)
+		Render(bodyContent)
 }
 
 func (p *chatPage) SetSize(width, height int) tea.Cmd {
@@ -417,7 +420,7 @@ func (p *chatPage) SetSize(width, height int) tea.Cmd {
 		mainWidth = innerWidth - sidebarWidth
 		p.chatHeight = height - p.inputHeight
 		p.sidebar.SetMode(sidebar.ModeVertical)
-		cmds = append(cmds, p.sidebar.SetSize(sidebarWidth, p.chatHeight), p.messages.SetPosition(0, 0))
+		cmds = append(cmds, p.sidebar.SetSize(sidebarWidth, height), p.messages.SetPosition(0, 0))
 	} else {
 		const horizontalSidebarHeight = 3
 		mainWidth = innerWidth
@@ -429,7 +432,7 @@ func (p *chatPage) SetSize(width, height int) tea.Cmd {
 	// Set component sizes
 	cmds = append(cmds,
 		p.messages.SetSize(mainWidth, p.chatHeight),
-		p.editor.SetSize(innerWidth, editorHeight), // Use calculated editor height
+		p.editor.SetSize(mainWidth, editorHeight), // Use calculated editor height
 	)
 
 	return tea.Batch(cmds...)
