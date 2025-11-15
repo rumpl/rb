@@ -81,10 +81,11 @@ func (c *Component) View() string {
 	}
 
 	// Account for border (1 char) + padding (2 left + 2 right) = 5 chars total
-	availableWidth := c.width - 1 - 4 // 1 for border, 4 for padding (2 left + 2 right)
-	if availableWidth < 10 {
-		availableWidth = 10 // Minimum readable width
-	}
+	availableWidth := max(
+		// 1 for border, 4 for padding (2 left + 2 right)
+		c.width-1-4,
+		// Minimum readable width
+		10)
 
 	if msg.ToolCall.Function.Arguments != "" {
 		content += "\n\n" + styles.ToolCallResult.Render(toolcommon.RenderFile(args.Path, args.Content, c.renderer))

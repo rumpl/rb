@@ -81,10 +81,5 @@ func (c *Component) View() string {
 		content += " " + c.spinner.View()
 	}
 
-	var resultContent string
-	if (msg.ToolStatus == types.ToolStatusCompleted || msg.ToolStatus == types.ToolStatusError) && msg.Content != "" {
-		resultContent = "\n\n" + styles.ToolCallResult.Render(toolcommon.RenderFile(args.Path, msg.Content, c.renderer))
-	}
-
-	return toolcommon.RenderToolMessage(c.width, content+resultContent)
+	return toolcommon.RenderToolMessage(c.width, content)
 }
