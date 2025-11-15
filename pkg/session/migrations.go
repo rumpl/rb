@@ -119,35 +119,6 @@ func (m *MigrationManager) applyMigration(ctx context.Context, migration *Migrat
 	return nil
 }
 
-// GetAppliedMigrations returns a list of applied migrations
-func (m *MigrationManager) GetAppliedMigrations(ctx context.Context) ([]Migration, error) {
-	rows, err := m.db.QueryContext(ctx, "SELECT id, name, description, applied_at FROM migrations ORDER BY id")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var migrations []Migration
-	for rows.Next() {
-		var migration Migration
-		var appliedAtStr string
-
-		err := rows.Scan(&migration.ID, &migration.Name, &migration.Description, &appliedAtStr)
-		if err != nil {
-			return nil, err
-		}
-
-		migration.AppliedAt, err = time.Parse(time.RFC3339, appliedAtStr)
-		if err != nil {
-			return nil, err
-		}
-
-		migrations = append(migrations, migration)
-	}
-
-	return migrations, nil
-}
-
 // getAllMigrations returns all available migrations in order
 func getAllMigrations() []Migration {
 	return []Migration{

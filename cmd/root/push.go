@@ -6,11 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/rumpl/rb/pkg/cli"
 	"github.com/rumpl/rb/pkg/content"
 	"github.com/rumpl/rb/pkg/oci"
 	"github.com/rumpl/rb/pkg/remote"
-	"github.com/rumpl/rb/pkg/telemetry"
 )
 
 func newPushCmd() *cobra.Command {
@@ -25,11 +23,8 @@ func newPushCmd() *cobra.Command {
 }
 
 func runPushCommand(cmd *cobra.Command, args []string) error {
-	telemetry.TrackCommand("push", args)
-
 	filePath := args[0]
 	tag := args[1]
-	out := cli.NewPrinter(cmd.OutOrStdout())
 
 	store, err := content.NewStore()
 	if err != nil {
@@ -43,13 +38,13 @@ func runPushCommand(cmd *cobra.Command, args []string) error {
 
 	slog.Debug("Starting push", "registry_ref", tag)
 
-	out.Printf("Pushing agent %s to %s\n", filePath, tag)
+	fmt.Printf("Pushing agent %s to %s\n", filePath, tag)
 
 	err = remote.Push(tag)
 	if err != nil {
 		return fmt.Errorf("failed to push artifact: %w", err)
 	}
 
-	out.Printf("Successfully pushed artifact to %s\n", tag)
+	fmt.Printf("Successfully pushed artifact to %s\n", tag)
 	return nil
 }

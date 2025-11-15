@@ -7,10 +7,8 @@ import (
 
 	"github.com/rumpl/rb/pkg/a2a"
 	"github.com/rumpl/rb/pkg/agentfile"
-	"github.com/rumpl/rb/pkg/cli"
 	"github.com/rumpl/rb/pkg/config"
 	"github.com/rumpl/rb/pkg/server"
-	"github.com/rumpl/rb/pkg/telemetry"
 )
 
 type a2aFlags struct {
@@ -44,10 +42,7 @@ func newA2ACmd() *cobra.Command {
 }
 
 func (f *a2aFlags) runA2ACommand(cmd *cobra.Command, args []string) error {
-	telemetry.TrackCommand("a2a", args)
-
 	ctx := cmd.Context()
-	out := cli.NewPrinter(cmd.OutOrStdout())
 
 	// Listen as early as possible
 	ln, err := server.Listen(ctx, fmt.Sprintf(":%d", f.port))
@@ -63,10 +58,10 @@ func (f *a2aFlags) runA2ACommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	agentFilename, err := agentfile.Resolve(ctx, out, args[0])
+	agentFilename, err := agentfile.Resolve(ctx, args[0])
 	if err != nil {
 		return err
 	}
 
-	return a2a.Start(ctx, out, agentFilename, f.agentName, f.runConfig, ln)
+	return a2a.Start(ctx, agentFilename, f.agentName, f.runConfig, ln)
 }

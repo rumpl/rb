@@ -16,13 +16,12 @@ import (
 	"google.golang.org/adk/server/adka2a"
 	"google.golang.org/adk/session"
 
-	"github.com/rumpl/rb/pkg/cli"
 	"github.com/rumpl/rb/pkg/config"
 	"github.com/rumpl/rb/pkg/teamloader"
 	"github.com/rumpl/rb/pkg/version"
 )
 
-func Start(ctx context.Context, out *cli.Printer, agentFilename, agentName string, runConfig config.RuntimeConfig, ln net.Listener) error {
+func Start(ctx context.Context, agentFilename, agentName string, runConfig config.RuntimeConfig, ln net.Listener) error {
 	slog.Debug("Starting A2A server", "agent", agentFilename, "addr", ln.Addr().String())
 
 	t, err := teamloader.Load(ctx, agentFilename, runConfig)
@@ -42,7 +41,7 @@ func Start(ctx context.Context, out *cli.Printer, agentFilename, agentName strin
 
 	baseURL := &url.URL{Scheme: "http", Host: ln.Addr().String()}
 
-	out.Println("A2A server listening on", baseURL.String())
+	fmt.Println("A2A server listening on", baseURL.String())
 
 	agentPath := "/invoke"
 	agentCard := &a2a.AgentCard{

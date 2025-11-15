@@ -99,17 +99,4 @@ func TestContentStore(t *testing.T) {
 
 	assert.Equal(t, testRef, metadata.Reference)
 	assert.Equal(t, digest, metadata.Digest)
-
-	artifacts, err := store.ListArtifacts()
-	require.NoError(t, err)
-
-	found := false
-	for _, artifact := range artifacts {
-		if artifact.Reference == testRef {
-			found = true
-			break
-		}
-	}
-
-	assert.True(t, found, "Artifact not found in list")
 }

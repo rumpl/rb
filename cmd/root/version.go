@@ -1,10 +1,10 @@
 package root
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
-	"github.com/rumpl/rb/pkg/cli"
-	"github.com/rumpl/rb/pkg/telemetry"
 	"github.com/rumpl/rb/pkg/version"
 )
 
@@ -19,9 +19,6 @@ func newVersionCmd() *cobra.Command {
 }
 
 func runVersionCommand(cmd *cobra.Command, args []string) {
-	telemetry.TrackCommand("version", args)
-
-	out := cli.NewPrinter(cmd.OutOrStdout())
-	out.Printf("rb version %s\n", version.Version)
-	out.Printf("Commit: %s\n", version.Commit)
+	fmt.Printf("rb version %s\n", version.Version)
+	fmt.Printf("Commit: %s\n", version.Commit)
 }

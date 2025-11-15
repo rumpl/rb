@@ -9,7 +9,6 @@ import (
 
 	"github.com/rumpl/rb/pkg/agent"
 	"github.com/rumpl/rb/pkg/agentfile"
-	"github.com/rumpl/rb/pkg/cli"
 	"github.com/rumpl/rb/pkg/config"
 	"github.com/rumpl/rb/pkg/runtime"
 	"github.com/rumpl/rb/pkg/session"
@@ -27,10 +26,10 @@ type ToolOutput struct {
 	Response string `json:"response" jsonschema:"the response from the agent"`
 }
 
-func StartMCPServer(ctx context.Context, out *cli.Printer, agentFilename string, runConfig config.RuntimeConfig) error {
+func StartMCPServer(ctx context.Context, agentFilename string, runConfig config.RuntimeConfig) error {
 	slog.Debug("Starting MCP server", "agent", agentFilename)
 
-	agentFilename, err := agentfile.Resolve(ctx, out, agentFilename)
+	agentFilename, err := agentfile.Resolve(ctx, agentFilename)
 	if err != nil {
 		return err
 	}

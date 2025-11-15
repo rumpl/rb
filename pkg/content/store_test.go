@@ -35,19 +35,6 @@ func TestStoreBasicOperations(t *testing.T) {
 
 	assert.Equal(t, testRef, metadata.Reference)
 	assert.Equal(t, digest, metadata.Digest)
-
-	artifacts, err := store.ListArtifacts()
-	require.NoError(t, err)
-
-	found := false
-	for _, artifact := range artifacts {
-		if artifact.Reference == testRef {
-			found = true
-			break
-		}
-	}
-
-	assert.True(t, found, "Artifact not found in list")
 }
 
 func TestStoreMultipleArtifacts(t *testing.T) {
@@ -72,11 +59,6 @@ func TestStoreMultipleArtifacts(t *testing.T) {
 
 		assert.NotEmpty(t, digest)
 	}
-
-	artifacts, err := store.ListArtifacts()
-	require.NoError(t, err)
-
-	assert.GreaterOrEqual(t, len(artifacts), len(testRefs))
 
 	for _, ref := range testRefs {
 		img, err := store.GetArtifactImage(ref)

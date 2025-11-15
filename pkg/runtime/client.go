@@ -28,23 +28,6 @@ type Client struct {
 // ClientOption is a function for configuring the Client
 type ClientOption func(*Client)
 
-// WithHTTPClient sets a custom HTTP client
-func WithHTTPClient(client *http.Client) ClientOption {
-	return func(c *Client) {
-		c.httpClient = client
-	}
-}
-
-// WithTimeout sets the HTTP client timeout
-func WithTimeout(timeout time.Duration) ClientOption {
-	return func(c *Client) {
-		if c.httpClient == nil {
-			c.httpClient = &http.Client{}
-		}
-		c.httpClient.Timeout = timeout
-	}
-}
-
 // NewClient creates a new HTTP client for the rb server
 func NewClient(baseURL string, opts ...ClientOption) (*Client, error) {
 	parsedURL, err := url.Parse(baseURL)

@@ -23,7 +23,6 @@ import (
 	"github.com/rumpl/rb/pkg/modelsdev"
 	"github.com/rumpl/rb/pkg/session"
 	"github.com/rumpl/rb/pkg/team"
-	"github.com/rumpl/rb/pkg/telemetry"
 	"github.com/rumpl/rb/pkg/tools"
 	"github.com/rumpl/rb/pkg/tools/builtin"
 )
@@ -38,16 +37,6 @@ type modelStore interface {
 type ElicitationResult struct {
 	Action  string         // "accept", "decline", or "cancel"
 	Content map[string]any // The submitted form data (only present when action is "accept")
-}
-
-// ElicitationError represents an error from a declined/cancelled elicitation
-type ElicitationError struct {
-	Action  string
-	Message string
-}
-
-func (e *ElicitationError) Error() string {
-	return fmt.Sprintf("elicitation %s: %s", e.Action, e.Message)
 }
 
 const (
@@ -208,8 +197,6 @@ func (r *LocalRuntime) finalizeEventChannel(ctx context.Context, sess *session.S
 
 	events <- StreamStopped(sess.ID, r.currentAgent)
 
-	telemetry.RecordSessionEnd(ctx)
-
 	if sess.Title == "" && len(sess.GetAllMessages()) > 0 {
 		r.generateSessionTitle(ctx, sess, events)
 	}
@@ -221,8 +208,6 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 	events := make(chan Event, 128)
 
 	go func() {
-		telemetry.RecordSessionStart(ctx, r.currentAgent, sess.ID)
-
 		ctx, sessionSpan := r.startSpan(ctx, "runtime.session", trace.WithAttributes(
 			attribute.String("agent", r.currentAgent),
 			attribute.String("session.id", sess.ID),
@@ -326,8 +311,6 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 				streamSpan.RecordError(err)
 				streamSpan.SetStatus(codes.Error, "creating chat completion")
 				slog.Error("Failed to create chat completion stream", "agent", a.Name(), "error", err)
-				// Track error in telemetry
-				telemetry.RecordError(ctx, err.Error())
 				events <- Error(fmt.Sprintf("creating chat completion: %v", err))
 				streamSpan.End()
 				return
@@ -345,8 +328,6 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 				streamSpan.RecordError(err)
 				streamSpan.SetStatus(codes.Error, "error handling stream")
 				slog.Error("Error handling stream", "agent", a.Name(), "error", err)
-				// Track error in telemetry
-				telemetry.RecordError(ctx, err.Error())
 				events <- Error(err.Error())
 				streamSpan.End()
 				return
@@ -436,7 +417,6 @@ func (r *LocalRuntime) getTools(ctx context.Context, a *agent.Agent, sessionSpan
 		slog.Error("Failed to get agent tools", "agent", a.Name(), "error", err)
 		sessionSpan.RecordError(err)
 		sessionSpan.SetStatus(codes.Error, "failed to get tools")
-		telemetry.RecordError(ctx, err.Error())
 		return nil, err
 	}
 
@@ -553,12 +533,6 @@ func (r *LocalRuntime) handleStream(ctx context.Context, stream chat.MessageStre
 
 			sess.InputTokens = response.Usage.InputTokens + response.Usage.CachedInputTokens
 			sess.OutputTokens = response.Usage.OutputTokens + response.Usage.CachedOutputTokens + response.Usage.ReasoningTokens
-
-			modelName := "unknown"
-			if m != nil {
-				modelName = m.Name
-			}
-			telemetry.RecordTokenUsage(ctx, modelName, int64(response.Usage.InputTokens), int64(response.Usage.OutputTokens+response.Usage.ReasoningTokens), sess.Cost)
 		}
 
 		if len(response.Choices) == 0 {
@@ -791,11 +765,8 @@ func (r *LocalRuntime) runTool(ctx context.Context, tool tools.Tool, toolCall to
 
 	var res *tools.ToolCallResult
 	var err error
-	var duration time.Duration
 
 	res, err = tool.Handler(ctx, toolCall)
-
-	telemetry.RecordToolCall(ctx, toolCall.Function.Name, sess.ID, a.Name(), duration, err)
 
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(ctx.Err(), context.Canceled) {
@@ -844,11 +815,7 @@ func (r *LocalRuntime) runAgentTool(ctx context.Context, handler ToolHandler, se
 	defer span.End()
 
 	events <- ToolCall(toolCall, tool, a.Name())
-	start := time.Now()
 	res, err := handler(ctx, sess, toolCall, events)
-	duration := time.Since(start)
-
-	telemetry.RecordToolCall(ctx, toolCall.Function.Name, sess.ID, a.Name(), duration, err)
 
 	var output string
 	if err != nil {

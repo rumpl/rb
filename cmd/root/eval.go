@@ -1,14 +1,14 @@
 package root
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/rumpl/rb/pkg/agentfile"
-	"github.com/rumpl/rb/pkg/cli"
 	"github.com/rumpl/rb/pkg/config"
 	"github.com/rumpl/rb/pkg/evaluation"
 	"github.com/rumpl/rb/pkg/teamloader"
-	"github.com/rumpl/rb/pkg/telemetry"
 )
 
 type evalFlags struct {
@@ -32,12 +32,9 @@ func newEvalCmd() *cobra.Command {
 }
 
 func (f *evalFlags) runEvalCommand(cmd *cobra.Command, args []string) error {
-	telemetry.TrackCommand("eval", args)
-
 	ctx := cmd.Context()
-	out := cli.NewPrinter(cmd.OutOrStdout())
 
-	agentFilename, err := agentfile.Resolve(ctx, out, args[0])
+	agentFilename, err := agentfile.Resolve(ctx, args[0])
 	if err != nil {
 		return err
 	}
@@ -53,9 +50,9 @@ func (f *evalFlags) runEvalCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, evalResult := range evalResults {
-		out.Printf("Eval file: %s\n", evalResult.EvalFile)
-		out.Printf("Tool trajectory score: %f\n", evalResult.Score.ToolTrajectoryScore)
-		out.Printf("Rouge-1 score: %f\n", evalResult.Score.Rouge1Score)
+		fmt.Printf("Eval file: %s\n", evalResult.EvalFile)
+		fmt.Printf("Tool trajectory score: %f\n", evalResult.Score.ToolTrajectoryScore)
+		fmt.Printf("Rouge-1 score: %f\n", evalResult.Score.Rouge1Score)
 	}
 
 	return nil

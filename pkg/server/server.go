@@ -199,21 +199,6 @@ func (s *Server) replaceAllTeams(teams map[string]*team.Team) map[string]*team.T
 	return oldTeams
 }
 
-// countTeams returns the number of teams with read lock
-func (s *Server) countTeams() int {
-	s.teamsMu.RLock()
-	defer s.teamsMu.RUnlock()
-	return len(s.teams)
-}
-
-// hasTeam checks if a team exists with read lock
-func (s *Server) hasTeam(key string) bool {
-	s.teamsMu.RLock()
-	defer s.teamsMu.RUnlock()
-	_, exists := s.teams[key]
-	return exists
-}
-
 func (s *Server) ping(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
@@ -1300,4 +1285,19 @@ func (s *Server) elicitation(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, nil)
+}
+
+// countTeams returns the number of teams with read lock
+func (s *Server) countTeams() int {
+	s.teamsMu.RLock()
+	defer s.teamsMu.RUnlock()
+	return len(s.teams)
+}
+
+// hasTeam checks if a team exists with read lock
+func (s *Server) hasTeam(key string) bool {
+	s.teamsMu.RLock()
+	defer s.teamsMu.RUnlock()
+	_, exists := s.teams[key]
+	return exists
 }

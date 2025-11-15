@@ -2,9 +2,6 @@ package root
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/rumpl/rb/pkg/cli"
-	"github.com/rumpl/rb/pkg/telemetry"
 )
 
 func newExecCmd() *cobra.Command {
@@ -30,10 +27,6 @@ func newExecCmd() *cobra.Command {
 }
 
 func (f *runExecFlags) runExecCommand(cmd *cobra.Command, args []string) error {
-	telemetry.TrackCommand("exec", args)
-
-	ctx := cmd.Context()
-	out := cli.NewPrinter(cmd.OutOrStdout())
-
-	return f.runOrExec(ctx, out, args, true)
+	// TODO: ???
+	return f.run(cmd.Context(), args)
 }

@@ -31,18 +31,6 @@ type Store struct {
 
 type Opt func(*Store)
 
-func WithRefreshInterval(refreshInterval time.Duration) Opt {
-	return func(s *Store) {
-		s.refreshInterval = refreshInterval
-	}
-}
-
-func WithCacheDir(cacheDir string) Opt {
-	return func(s *Store) {
-		s.cacheDir = cacheDir
-	}
-}
-
 // NewStore creates a new models.dev store instance
 func NewStore(opts ...Opt) (*Store, error) {
 	s := &Store{

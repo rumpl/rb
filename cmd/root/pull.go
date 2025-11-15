@@ -10,9 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/rumpl/rb/pkg/agentfile"
-	"github.com/rumpl/rb/pkg/cli"
 	"github.com/rumpl/rb/pkg/remote"
-	"github.com/rumpl/rb/pkg/telemetry"
 )
 
 func newPullCmd() *cobra.Command {
@@ -27,14 +25,11 @@ func newPullCmd() *cobra.Command {
 }
 
 func runPullCommand(cmd *cobra.Command, args []string) error {
-	telemetry.TrackCommand("pull", args)
-
 	ctx := cmd.Context()
-	out := cli.NewPrinter(cmd.OutOrStdout())
 	registryRef := args[0]
 	slog.Debug("Starting pull", "registry_ref", registryRef)
 
-	out.Println("Pulling agent", registryRef)
+	fmt.Println("Pulling agent", registryRef)
 
 	var opts []crane.Option
 	_, err := remote.Pull(ctx, registryRef, opts...)
@@ -54,7 +49,7 @@ func runPullCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	out.Printf("Agent saved to %s\n", fileName)
+	fmt.Printf("Agent saved to %s\n", fileName)
 
 	return nil
 }

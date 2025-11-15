@@ -10,13 +10,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/rumpl/rb/pkg/agentfile"
-	"github.com/rumpl/rb/pkg/cli"
 	"github.com/rumpl/rb/pkg/config"
 	"github.com/rumpl/rb/pkg/remote"
 	"github.com/rumpl/rb/pkg/server"
 	"github.com/rumpl/rb/pkg/session"
 	"github.com/rumpl/rb/pkg/teamloader"
-	"github.com/rumpl/rb/pkg/telemetry"
 )
 
 type apiFlags struct {
@@ -47,10 +45,7 @@ func newAPICmd() *cobra.Command {
 }
 
 func (f *apiFlags) runAPICommand(cmd *cobra.Command, args []string) error {
-	telemetry.TrackCommand("api", args)
-
 	ctx := cmd.Context()
-	out := cli.NewPrinter(cmd.OutOrStdout())
 	agentsPath := args[0]
 
 	// Make sure no question is ever asked to the user in api mode.
@@ -60,7 +55,7 @@ func (f *apiFlags) runAPICommand(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--pull-interval flag can only be used with OCI references, not local files")
 	}
 
-	resolvedPath, err := agentfile.Resolve(ctx, out, agentsPath)
+	resolvedPath, err := agentfile.Resolve(ctx, agentsPath)
 	if err != nil {
 		return err
 	}
@@ -132,7 +127,7 @@ func (f *apiFlags) runAPICommand(cmd *cobra.Command, args []string) error {
 					}
 
 					// Resolve the OCI reference to get the updated file path
-					newResolvedPath, err := agentfile.Resolve(ctx, out, agentsPath)
+					newResolvedPath, err := agentfile.Resolve(ctx, agentsPath)
 					if err != nil {
 						slog.Error("Failed to resolve OCI reference after pull", "reference", agentsPath, "error", err)
 						continue

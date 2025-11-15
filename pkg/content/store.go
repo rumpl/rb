@@ -107,75 +107,6 @@ func (s *Store) StoreArtifact(img v1.Image, reference string) (string, error) {
 	return digestStr, nil
 }
 
-// GetArtifactImage loads an artifact by digest or reference and returns it as a v1.Image
-func (s *Store) GetArtifactImage(identifier string) (v1.Image, error) {
-	digest, err := s.resolveIdentifier(identifier)
-	if err != nil {
-		return nil, err
-	}
-
-	artifactPath := filepath.Join(s.baseDir, digest+".tar")
-
-	if _, err := os.Stat(artifactPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("artifact %s not found in store", identifier)
-	}
-
-	img, err := tarball.ImageFromPath(artifactPath, nil)
-	if err != nil {
-		return nil, fmt.Errorf("loading image from tar file %s: %w", artifactPath, err)
-	}
-
-	return img, nil
-}
-
-// GetArtifactPath returns the file path for an artifact by digest or reference
-func (s *Store) GetArtifactPath(identifier string) (string, error) {
-	digest, err := s.resolveIdentifier(identifier)
-	if err != nil {
-		return "", err
-	}
-
-	artifactPath := filepath.Join(s.baseDir, digest+".tar")
-
-	if _, err := os.Stat(artifactPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("artifact %s not found in store", identifier)
-	}
-
-	return artifactPath, nil
-}
-
-// GetArtifactMetadata returns metadata for an artifact by digest or reference
-func (s *Store) GetArtifactMetadata(identifier string) (*ArtifactMetadata, error) {
-	digest, err := s.resolveIdentifier(identifier)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.loadMetadata(digest)
-}
-
-// ListArtifacts returns a list of all stored artifacts
-func (s *Store) ListArtifacts() ([]ArtifactMetadata, error) {
-	files, err := os.ReadDir(s.baseDir)
-	if err != nil {
-		return nil, fmt.Errorf("reading store directory: %w", err)
-	}
-
-	var artifacts []ArtifactMetadata
-	for _, file := range files {
-		if !file.IsDir() && strings.HasSuffix(file.Name(), ".tar") {
-			digest := strings.TrimSuffix(file.Name(), ".tar")
-			metadata, err := s.loadMetadata(digest)
-			if err != nil {
-				continue
-			}
-			artifacts = append(artifacts, *metadata)
-		}
-	}
-
-	return artifacts, nil
-}
-
 // DeleteArtifact removes an artifact from the store
 func (s *Store) DeleteArtifact(identifier string) error {
 	digest, err := s.resolveIdentifier(identifier)
@@ -201,6 +132,64 @@ func (s *Store) DeleteArtifact(identifier string) error {
 	}
 
 	return nil
+}
+
+// removeReferenceLinks removes all reference links pointing to the given digest
+func (s *Store) removeReferenceLinks(digest string) error {
+	refsDir := filepath.Join(s.baseDir, "refs")
+	files, err := os.ReadDir(refsDir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		refFile := filepath.Join(refsDir, file.Name())
+		data, err := os.ReadFile(refFile)
+		if err != nil {
+			continue
+		}
+
+		if strings.TrimSpace(string(data)) == digest {
+			os.Remove(refFile)
+		}
+	}
+
+	return nil
+}
+
+// GetArtifactImage loads an artifact by digest or reference and returns it as a v1.Image
+func (s *Store) GetArtifactImage(identifier string) (v1.Image, error) {
+	digest, err := s.resolveIdentifier(identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	artifactPath := filepath.Join(s.baseDir, digest+".tar")
+
+	if _, err := os.Stat(artifactPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("artifact %s not found in store", identifier)
+	}
+
+	img, err := tarball.ImageFromPath(artifactPath, nil)
+	if err != nil {
+		return nil, fmt.Errorf("loading image from tar file %s: %w", artifactPath, err)
+	}
+
+	return img, nil
+}
+
+// GetArtifactMetadata returns metadata for an artifact by digest or reference
+func (s *Store) GetArtifactMetadata(identifier string) (*ArtifactMetadata, error) {
+	digest, err := s.resolveIdentifier(identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.loadMetadata(digest)
 }
 
 // resolveIdentifier resolves a digest or reference to a digest
@@ -243,33 +232,6 @@ func (s *Store) createReferenceLink(reference, digest string) error {
 	refFile := filepath.Join(refsDir, hex.EncodeToString(refHash[:]))
 
 	return os.WriteFile(refFile, []byte(digest), 0o644)
-}
-
-// removeReferenceLinks removes all reference links pointing to the given digest
-func (s *Store) removeReferenceLinks(digest string) error {
-	refsDir := filepath.Join(s.baseDir, "refs")
-	files, err := os.ReadDir(refsDir)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-
-		refFile := filepath.Join(refsDir, file.Name())
-		data, err := os.ReadFile(refFile)
-		if err != nil {
-			continue
-		}
-
-		if strings.TrimSpace(string(data)) == digest {
-			os.Remove(refFile)
-		}
-	}
-
-	return nil
 }
 
 // saveMetadata saves metadata for an artifact

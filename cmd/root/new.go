@@ -12,7 +12,6 @@ import (
 	"github.com/rumpl/rb/pkg/creator"
 	"github.com/rumpl/rb/pkg/runtime"
 	"github.com/rumpl/rb/pkg/session"
-	"github.com/rumpl/rb/pkg/telemetry"
 	"github.com/rumpl/rb/pkg/tui"
 )
 
@@ -42,8 +41,6 @@ func newNewCmd() *cobra.Command {
 }
 
 func (f *newFlags) runNewCommand(cmd *cobra.Command, args []string) error {
-	telemetry.TrackCommand("new", args)
-
 	ctx := cmd.Context()
 
 	var model string         // final model name

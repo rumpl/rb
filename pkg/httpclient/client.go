@@ -35,12 +35,6 @@ func NewHTTPClient(opts ...Opt) *http.Client {
 	}
 }
 
-func WithHeader(key, value string) Opt {
-	return func(o *HTTPOptions) {
-		o.Header.Set(key, value)
-	}
-}
-
 func WithProxiedBaseURL(value string) Opt {
 	return func(o *HTTPOptions) {
 		o.Header.Set("X-RB-Forward", value)

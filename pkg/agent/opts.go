@@ -9,12 +9,6 @@ import (
 
 type Opt func(a *Agent)
 
-func WithInstruction(instruction string) Opt {
-	return func(a *Agent) {
-		a.instruction = instruction
-	}
-}
-
 func WithToolSets(toolSet ...tools.ToolSet) Opt {
 	var startableToolSet []*StartableToolSet
 	for _, ts := range toolSet {

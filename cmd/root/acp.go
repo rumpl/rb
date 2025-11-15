@@ -1,7 +1,6 @@
 package root
 
 import (
-	"io"
 	"log/slog"
 
 	acpsdk "github.com/coder/acp-go-sdk"
@@ -9,9 +8,7 @@ import (
 
 	"github.com/rumpl/rb/pkg/acp"
 	"github.com/rumpl/rb/pkg/agentfile"
-	"github.com/rumpl/rb/pkg/cli"
 	"github.com/rumpl/rb/pkg/config"
-	"github.com/rumpl/rb/pkg/telemetry"
 )
 
 type acpFlags struct {
@@ -39,12 +36,9 @@ func newACPCmd() *cobra.Command {
 }
 
 func (f *acpFlags) runACPCommand(cmd *cobra.Command, args []string) error {
-	telemetry.TrackCommand("acp", args)
-
 	ctx := cmd.Context()
-	out := cli.NewPrinter(io.Discard)
 
-	agentFilename, err := agentfile.Resolve(ctx, out, args[0])
+	agentFilename, err := agentfile.Resolve(ctx, args[0])
 	if err != nil {
 		return err
 	}

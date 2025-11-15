@@ -13,13 +13,11 @@ import (
 
 	"github.com/rumpl/rb/pkg/agentfile"
 	"github.com/rumpl/rb/pkg/app"
-	"github.com/rumpl/rb/pkg/cli"
 	"github.com/rumpl/rb/pkg/config"
 	"github.com/rumpl/rb/pkg/runtime"
 	"github.com/rumpl/rb/pkg/session"
 	"github.com/rumpl/rb/pkg/team"
 	"github.com/rumpl/rb/pkg/teamloader"
-	"github.com/rumpl/rb/pkg/telemetry"
 	"github.com/rumpl/rb/pkg/tui"
 )
 
@@ -30,7 +28,6 @@ type runExecFlags struct {
 	attachmentPath string
 	remoteAddress  string
 	modelOverrides []string
-	dryRun         bool
 	runConfig      config.RuntimeConfig
 }
 
@@ -62,20 +59,14 @@ func addRunOrExecFlags(cmd *cobra.Command, flags *runExecFlags) {
 	cmd.PersistentFlags().BoolVar(&flags.autoApprove, "yolo", false, "Automatically approve all tool calls without prompting")
 	cmd.PersistentFlags().StringVar(&flags.attachmentPath, "attach", "", "Attach an image file to the message")
 	cmd.PersistentFlags().StringArrayVar(&flags.modelOverrides, "model", nil, "Override agent model: [agent=]provider/model (repeatable)")
-	cmd.PersistentFlags().BoolVar(&flags.dryRun, "dry-run", false, "Initialize the agent without executing anything")
 	cmd.PersistentFlags().StringVar(&flags.remoteAddress, "remote", "", "Use remote runtime with specified address")
 }
 
 func (f *runExecFlags) runRunCommand(cmd *cobra.Command, args []string) error {
-	telemetry.TrackCommand("run", args)
-
-	ctx := cmd.Context()
-	out := cli.NewPrinter(cmd.OutOrStdout())
-
-	return f.runOrExec(ctx, out, args, false)
+	return f.run(cmd.Context(), args)
 }
 
-func (f *runExecFlags) runOrExec(ctx context.Context, out *cli.Printer, args []string, exec bool) error {
+func (f *runExecFlags) run(ctx context.Context, args []string) error {
 	slog.Debug("Starting agent", "agent", f.agentName)
 
 	if err := f.setupWorkingDirectory(); err != nil {
@@ -96,7 +87,7 @@ func (f *runExecFlags) runOrExec(ctx context.Context, out *cli.Printer, args []s
 		}
 
 	default:
-		agentFileName, err = f.resolveAgentFile(ctx, out, args[0])
+		agentFileName, err = f.resolveAgentFile(ctx, args[0])
 		if err != nil {
 			return err
 		}
@@ -112,15 +103,6 @@ func (f *runExecFlags) runOrExec(ctx context.Context, out *cli.Printer, args []s
 		}
 	}
 
-	if f.dryRun {
-		out.Println("Dry run mode enabled. Agent initialized but will not execute.")
-		return nil
-	}
-
-	if exec {
-		return f.handleExecMode(ctx, out, agentFileName, rt, sess, args)
-	}
-
 	return handleRunMode(ctx, agentFileName, rt, sess, args)
 }
 
@@ -130,11 +112,11 @@ func (f *runExecFlags) setupWorkingDirectory() error {
 
 // resolveAgentFile is a wrapper method that calls the agentfile.Resolve function
 // after checking for remote address
-func (f *runExecFlags) resolveAgentFile(ctx context.Context, out *cli.Printer, agentFilename string) (string, error) {
+func (f *runExecFlags) resolveAgentFile(ctx context.Context, agentFilename string) (string, error) {
 	if f.remoteAddress != "" {
 		return agentFilename, nil
 	}
-	return agentfile.Resolve(ctx, out, agentFilename)
+	return agentfile.Resolve(ctx, agentFilename)
 }
 
 func (f *runExecFlags) loadAgentFrom(ctx context.Context, source teamloader.AgentSource) (*team.Team, error) {
@@ -202,24 +184,6 @@ func (f *runExecFlags) createLocalRuntimeAndSession(t *team.Team) (runtime.Runti
 
 	slog.Debug("Using local runtime", "agent", f.agentName)
 	return localRt, sess, nil
-}
-
-func (f *runExecFlags) handleExecMode(ctx context.Context, out *cli.Printer, agentFilename string, rt runtime.Runtime, sess *session.Session, args []string) error {
-	execArgs := []string{"exec"}
-	if len(args) == 2 {
-		execArgs = append(execArgs, args[1])
-	} else {
-		execArgs = append(execArgs, "Follow the default instructions")
-	}
-
-	err := cli.Run(ctx, out, cli.Config{
-		AppName:        AppName,
-		AttachmentPath: f.attachmentPath,
-	}, agentFilename, rt, sess, execArgs)
-	if cliErr, ok := err.(cli.RuntimeError); ok {
-		return RuntimeError{Err: cliErr.Err}
-	}
-	return err
 }
 
 func readInitialMessage(args []string) (*string, error) {

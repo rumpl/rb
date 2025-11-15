@@ -14,8 +14,6 @@ import (
 
 	"github.com/rumpl/rb/pkg/environment"
 	"github.com/rumpl/rb/pkg/paths"
-	"github.com/rumpl/rb/pkg/telemetry"
-	"github.com/rumpl/rb/pkg/version"
 )
 
 type rootFlags struct {
@@ -47,8 +45,6 @@ func NewRootCmd() *cobra.Command {
 					}(),
 				})))
 			}
-
-			telemetry.SetGlobalTelemetryDebugMode(flags.debugMode)
 
 			if flags.enableOtel {
 				if err := initOTelSDK(cmd.Context()); err != nil {
@@ -100,21 +96,6 @@ func NewRootCmd() *cobra.Command {
 }
 
 func Execute(ctx context.Context, stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
-	// Set the version for automatic telemetry initialization
-	telemetry.SetGlobalTelemetryVersion(version.Version)
-
-	// Print startup message only on first installation/setup
-	if isFirstRun() && os.Getenv("RB_HIDE_TELEMETRY_BANNER") != "1" {
-		startupMsg := `
-Welcome to rb! 🚀
-
-We collect anonymous usage data to help improve rb. To disable:
-  - Set environment variable: TELEMETRY_ENABLED=false
-
-`
-		fmt.Fprint(stderr, startupMsg)
-	}
-
 	rootCmd := NewRootCmd()
 	rootCmd.SetArgs(args)
 	rootCmd.SetIn(stdin)

@@ -82,7 +82,7 @@ agents:
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 
-	resolved, err := Resolve(ctx, nil, yamlFile)
+	resolved, err := Resolve(ctx, yamlFile)
 	require.NoError(t, err)
 
 	absPath, err := filepath.Abs(yamlFile)
@@ -116,7 +116,7 @@ agents:
 	defer cancel()
 
 	// First resolution
-	resolved1, err := Resolve(ctx, nil, ociRef)
+	resolved1, err := Resolve(ctx, ociRef)
 	require.NoError(t, err)
 	assert.NotEmpty(t, resolved1)
 
@@ -132,7 +132,7 @@ agents:
 	firstResolvedPath := resolved1
 
 	// Second resolution (simulating a reload)
-	resolved2, err := Resolve(ctx, nil, ociRef)
+	resolved2, err := Resolve(ctx, ociRef)
 	require.NoError(t, err)
 
 	// Should return the SAME filename
@@ -157,7 +157,7 @@ agents:
 	require.NoError(t, err)
 
 	// Third resolution (simulating reload after update)
-	resolved3, err := Resolve(ctx, nil, ociRef)
+	resolved3, err := Resolve(ctx, ociRef)
 	require.NoError(t, err)
 
 	// Should STILL use the same filename
@@ -208,10 +208,10 @@ agents:
 	defer cancel()
 
 	// Resolve both OCI refs
-	resolved1, err := Resolve(ctx, nil, ociRef1)
+	resolved1, err := Resolve(ctx, ociRef1)
 	require.NoError(t, err)
 
-	resolved2, err := Resolve(ctx, nil, ociRef2)
+	resolved2, err := Resolve(ctx, ociRef2)
 	require.NoError(t, err)
 
 	// Should have DIFFERENT filenames
@@ -255,7 +255,7 @@ agents:
 	ctx, cancel := context.WithCancel(t.Context())
 
 	// Resolve the OCI ref
-	resolved, err := Resolve(ctx, nil, ociRef)
+	resolved, err := Resolve(ctx, ociRef)
 	require.NoError(t, err)
 	assert.FileExists(t, resolved)
 

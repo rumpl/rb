@@ -13,7 +13,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 
 	"github.com/rumpl/rb/pkg/aliases"
-	"github.com/rumpl/rb/pkg/cli"
 	"github.com/rumpl/rb/pkg/content"
 	"github.com/rumpl/rb/pkg/remote"
 )
@@ -67,7 +66,7 @@ func OciRefToFilename(ociRef string) string {
 }
 
 // Resolve resolves an agent file reference (local file or OCI image) to a local file path
-func Resolve(ctx context.Context, out *cli.Printer, agentFilename string) (string, error) {
+func Resolve(ctx context.Context, agentFilename string) (string, error) {
 	originalOCIRef := agentFilename // Store the original for OCI ref tracking
 
 	// Try to resolve as an alias first
@@ -95,7 +94,7 @@ func Resolve(ctx context.Context, out *cli.Printer, agentFilename string) (strin
 	// Treat as an OCI image reference. Try local store first, otherwise pull then load.
 	a, err := FromStore(agentFilename)
 	if err != nil {
-		out.Println("Pulling agent", agentFilename)
+		fmt.Println("Pulling agent", agentFilename)
 		if _, pullErr := remote.Pull(ctx, agentFilename); pullErr != nil {
 			return "", fmt.Errorf("failed to pull OCI image %s: %w", agentFilename, pullErr)
 		}
