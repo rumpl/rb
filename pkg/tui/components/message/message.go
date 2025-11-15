@@ -155,7 +155,7 @@ func senderPrefix(sender string) string {
 	if sender == "" {
 		return ""
 	}
-	return styles.AgentBadgeStyle.Render("["+sender+"]") + "\n\n"
+	return styles.AgentBadgeStyle.Render("["+sender+"]") + "\n"
 }
 
 // Height calculates the height needed for this message view

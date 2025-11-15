@@ -17,30 +17,30 @@ const (
 // Color hex values (used throughout the file)
 const (
 	// Primary colors
-	ColorAccentBlue      = "#7AA2F7" // Soft blue
-	ColorMutedBlue       = "#565F89" // Dark blue-grey
-	ColorBackgroundAlt   = "#24283B" // Slightly lighter background
-	ColorBorderSecondary = "#414868" // Dark blue-grey
-	ColorTextPrimary     = "#C0CAF5" // Light blue-white
-	ColorTextSecondary   = "#9AA5CE" // Medium blue-grey
-	ColorSuccessGreen    = "#9ECE6A" // Soft green
-	ColorErrorRed        = "#F7768E" // Soft red
-	ColorWarningYellow   = "#E0AF68" // Soft yellow
+	ColorAccentBlue      = "#FF9E64" // Warm orange (was soft blue)
+	ColorMutedBlue       = "#8B6F47" // Muted brown-orange (was dark blue-grey)
+	ColorBackgroundAlt   = "#24283B" // Slightly lighter background (kept blue)
+	ColorBorderSecondary = "#6B5844" // Dark brown-orange (was dark blue-grey)
+	ColorTextPrimary     = "#FFD7A8" // Light peach (was light blue-white)
+	ColorTextSecondary   = "#FFBA7A" // Medium orange (was medium blue-grey)
+	ColorSuccessGreen    = "#9ECE6A" // Soft green (kept for semantic meaning)
+	ColorErrorRed        = "#F7768E" // Soft red (kept for semantic meaning)
+	ColorWarningYellow   = "#E0AF68" // Soft yellow (kept for semantic meaning)
 
-	// Spinner glow colors (transition from base blue towards white)
-	ColorSpinnerDim       = "#9AB8F9" // Lighter blue
-	ColorSpinnerBright    = "#B8CFFB" // Much lighter blue
-	ColorSpinnerBrightest = "#D6E5FC" // Very light blue, near white
+	// Spinner glow colors (transition from base orange towards white)
+	ColorSpinnerDim       = "#FFAA80" // Light orange
+	ColorSpinnerBright    = "#FFC9A8" // Much lighter orange
+	ColorSpinnerBrightest = "#FFE5D0" // Very light peach, near white
 
 	// Background colors
-	ColorBackground = "#1A1B26" // Dark blue-black
+	ColorBackground = "#1A1B26" // Dark blue-black (kept blue)
 
 	// Status colors
-	ColorInfoCyan = "#7DCFFF" // Soft cyan
+	ColorInfoCyan = "#FFA85C" // Bright orange (was soft cyan)
 
 	// Badge colors
-	ColorAgentBadge    = "#BB9AF7" // Soft purple
-	ColorTransferBadge = "#7DCFFF" // Soft cyan
+	ColorAgentBadge    = "#FF8C42" // Vibrant orange (was soft purple)
+	ColorTransferBadge = "#FFAA70" // Light orange (was soft cyan)
 
 	// Diff colors
 	ColorDiffAddBg    = "#20303B" // Dark blue-green
@@ -412,13 +412,11 @@ var (
 	AgentBadgeStyle = BaseStyle.
 			Foreground(AgentBadge).
 			Bold(true).
-			Padding(0, 1).
 			Background(BackgroundAlt)
 
 	TransferBadgeStyle = BaseStyle.
 				Foreground(TransferBadge).
 				Bold(true).
-				Padding(0, 1).
 				Background(BackgroundAlt)
 )
 
@@ -508,18 +506,18 @@ func ChromaStyle() *chroma.Style {
 }
 
 func MarkdownStyle() ansi.StyleConfig {
-	h1Color := ColorAccentBlue
-	h2Color := ColorAccentBlue
-	h3Color := ColorTextSecondary
-	h4Color := ColorTextSecondary
-	h5Color := ColorTextSecondary
-	h6Color := ColorMutedBlue
-	linkColor := ColorAccentBlue
-	strongColor := ColorTextPrimary
-	codeColor := ColorTextPrimary
-	blockquoteColor := ColorTextSecondary
-	listColor := ColorTextPrimary
-	hrColor := ColorBorderSecondary
+	h1Color := ColorAccentBlue            // Now warm orange
+	h2Color := ColorAccentBlue            // Now warm orange
+	h3Color := ColorTextSecondary         // Now medium orange
+	h4Color := ColorTextSecondary         // Now medium orange
+	h5Color := ColorTextSecondary         // Now medium orange
+	h6Color := ColorMutedBlue             // Now muted brown-orange
+	linkColor := ColorAccentBlue          // Now warm orange
+	strongColor := ColorTextPrimary       // Now light peach
+	codeColor := ColorTextPrimary         // Now light peach
+	blockquoteColor := ColorTextSecondary // Now medium orange
+	listColor := ColorTextPrimary         // Now light peach
+	hrColor := ColorBorderSecondary       // Now dark brown-orange
 
 	customDarkStyle := ansi.StyleConfig{
 		Document: ansi.StyleBlock{
