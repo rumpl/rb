@@ -85,6 +85,7 @@ type LocalRuntime struct {
 	elicitationRequestCh        chan ElicitationResult // Channel for receiving elicitation responses
 	elicitationEventsChannel    chan Event             // Current events channel for sending elicitation requests
 	elicitationEventsChannelMux sync.RWMutex           // Protects elicitationEventsChannel
+	titleGenerationWg           sync.WaitGroup         // Wait group for title generation
 }
 
 type streamResult struct {
@@ -197,9 +198,8 @@ func (r *LocalRuntime) finalizeEventChannel(ctx context.Context, sess *session.S
 
 	events <- StreamStopped(sess.ID, r.currentAgent)
 
-	if sess.Title == "" && len(sess.GetAllMessages()) > 0 {
-		r.generateSessionTitle(ctx, sess, events)
-	}
+	// Wait for title generation to complete if it's still running
+	r.titleGenerationWg.Wait()
 }
 
 // RunStream starts the agent's interaction loop and returns a channel of events
@@ -239,6 +239,15 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 		messages := sess.GetMessages(a)
 		if sess.SendUserMessage {
 			events <- UserMessage(messages[len(messages)-1].Content)
+		}
+
+		// Start title generation in a goroutine when we have the first user message
+		if sess.Title == "" && len(sess.GetAllMessages()) > 0 {
+			r.titleGenerationWg.Add(1)
+			go func() {
+				defer r.titleGenerationWg.Done()
+				r.generateSessionTitle(ctx, sess, events)
+			}()
 		}
 
 		events <- StreamStarted(sess.ID, a.Name())
