@@ -103,16 +103,9 @@ func wrapContentLines(content string, width int) string {
 			lines = append(lines, line[:breakPoint])
 			line = strings.TrimLeft(line[breakPoint:], " ")
 		}
-		if len(line) > 0 {
+		if line != "" {
 			lines = append(lines, line)
 		}
 	}
 	return strings.Join(lines, "\n")
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

@@ -193,7 +193,7 @@ func (r *LocalRuntime) registerDefaultTools() {
 	slog.Debug("Registered default tools", "count", len(r.toolMap))
 }
 
-func (r *LocalRuntime) finalizeEventChannel(ctx context.Context, sess *session.Session, events chan Event) {
+func (r *LocalRuntime) finalizeEventChannel(sess *session.Session, events chan Event) {
 	defer close(events)
 
 	events <- StreamStopped(sess.ID, r.currentAgent)
@@ -252,7 +252,7 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 
 		events <- StreamStarted(sess.ID, a.Name())
 
-		defer r.finalizeEventChannel(ctx, sess, events)
+		defer r.finalizeEventChannel(sess, events)
 
 		r.registerDefaultTools()
 
@@ -326,7 +326,7 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 			}
 
 			slog.Debug("Processing stream", "agent", a.Name())
-			res, err := r.handleStream(ctx, stream, a, agentTools, sess, m, events)
+			res, err := r.handleStream(stream, a, agentTools, sess, m, events)
 			if err != nil {
 				// Treat context cancellation as a graceful stop
 				if errors.Is(err, context.Canceled) {
@@ -513,7 +513,7 @@ func (r *LocalRuntime) Run(ctx context.Context, sess *session.Session) ([]sessio
 	return sess.GetAllMessages(), nil
 }
 
-func (r *LocalRuntime) handleStream(ctx context.Context, stream chat.MessageStream, a *agent.Agent, agentTools []tools.Tool, sess *session.Session, m *modelsdev.Model, events chan Event) (streamResult, error) {
+func (r *LocalRuntime) handleStream(stream chat.MessageStream, a *agent.Agent, agentTools []tools.Tool, sess *session.Session, m *modelsdev.Model, events chan Event) (streamResult, error) {
 	defer stream.Close()
 
 	var fullContent strings.Builder
