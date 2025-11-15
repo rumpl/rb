@@ -338,18 +338,20 @@ var (
 var (
 	InputStyle = textarea.Styles{
 		Focused: textarea.StyleState{
-			Base:        BaseStyle,
-			Placeholder: BaseStyle.Foreground(PlaceholderColor),
+			Base:        BaseStyle.Background(BackgroundAlt),
+			Placeholder: BaseStyle.Foreground(PlaceholderColor).Background(BackgroundAlt),
+			CursorLine:  BaseStyle.Background(BackgroundAlt),
 		},
 		Blurred: textarea.StyleState{
-			Base:        BaseStyle,
-			Placeholder: BaseStyle.Foreground(PlaceholderColor),
+			Base:        BaseStyle.Background(BackgroundAlt),
+			Placeholder: BaseStyle.Foreground(PlaceholderColor).Background(BackgroundAlt),
+			CursorLine:  BaseStyle.Background(BackgroundAlt),
 		},
 		Cursor: textarea.CursorStyle{
 			Color: Accent,
 		},
 	}
-	EditorStyle = BaseStyle.Padding(2, 0, 0, 0)
+	EditorStyle = BaseStyle.Background(BackgroundAlt)
 	// SuggestionGhostStyle renders inline auto-complete hints in a muted tone.
 	SuggestionGhostStyle = BaseStyle.Foreground(TextMuted)
 )

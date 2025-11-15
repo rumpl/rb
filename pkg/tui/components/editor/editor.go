@@ -314,7 +314,26 @@ func (e *editor) View() string {
 		view = e.applySuggestionOverlay(view)
 	}
 
-	return styles.EditorStyle.Render(view)
+	// Ensure all lines have the background color applied across full width
+	lines := strings.Split(view, "\n")
+
+	// Style for lines with background - must render spaces to make background visible
+	lineStyle := styles.BaseStyle.Background(styles.BackgroundAlt).Width(e.width)
+
+	// Apply background to all existing lines by padding them to full width
+	for i, line := range lines {
+		// Strip the line content and re-render with background
+		plainText := stripANSI(line)
+		lines[i] = lineStyle.Render(plainText)
+	}
+
+	// Fill remaining lines with background-colored empty lines to match allocated height
+	emptyLine := lineStyle.Render("")
+	for len(lines) < e.height {
+		lines = append(lines, emptyLine)
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 // SetSize sets the dimensions of the component
@@ -322,9 +341,8 @@ func (e *editor) SetSize(width, height int) tea.Cmd {
 	e.width = width
 	e.height = height
 
-	// Account for border and padding
 	contentWidth := max(width, 10)
-	contentHeight := max(height, 3) // Minimum 3 lines, but respect height parameter
+	contentHeight := max(height, 3) // Minimum 3 lines
 
 	e.textarea.SetWidth(contentWidth)
 	e.textarea.SetHeight(contentHeight)
