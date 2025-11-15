@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/glamour/v2"
 
 	"github.com/rumpl/rb/pkg/tools/builtin"
+	"github.com/rumpl/rb/pkg/tui/components/toolcommon"
 	"github.com/rumpl/rb/pkg/tui/core/layout"
 	"github.com/rumpl/rb/pkg/tui/service"
 	"github.com/rumpl/rb/pkg/tui/styles"
@@ -17,6 +18,7 @@ import (
 type Component struct {
 	message  *types.Message
 	renderer *glamour.TermRenderer
+	width    int
 }
 
 func New(
@@ -27,10 +29,12 @@ func New(
 	return &Component{
 		message:  msg,
 		renderer: renderer,
+		width:    80,
 	}
 }
 
 func (c *Component) SetSize(width, height int) tea.Cmd {
+	c.width = width
 	return nil
 }
 
@@ -48,7 +52,9 @@ func (c *Component) View() string {
 		return "" // TODO: Partial tool call
 	}
 
-	badge := styles.TransferBadgeStyle.Render(c.message.Sender + " -> " + params.Agent + ": ")
-	content := styles.MutedStyle.PaddingLeft(2).Render(params.Task)
-	return badge + "\n" + content
+	badge := styles.TransferBadgeStyle.Render(c.message.Sender + " -> " + params.Agent + ":")
+	content := styles.MutedStyle.Render(params.Task)
+
+	body := badge + "\n" + content
+	return toolcommon.RenderToolMessage(c.width, body)
 }

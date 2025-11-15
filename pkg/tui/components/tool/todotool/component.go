@@ -89,7 +89,7 @@ func (c *Component) View() string {
 func (c *Component) renderCreate() string {
 	msg := c.message
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.HighlightStyle.Render(displayName))
+	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
@@ -111,13 +111,13 @@ func (c *Component) renderCreate() string {
 		resultContent = "\n" + styles.MutedStyle.Render(msg.Content)
 	}
 
-	return styles.BaseStyle.PaddingLeft(2).PaddingTop(1).Render(content + resultContent)
+	return toolcommon.RenderToolMessage(c.width, content+resultContent)
 }
 
 func (c *Component) renderCreateMultiple() string {
 	msg := c.message
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.HighlightStyle.Render(displayName))
+	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
@@ -141,13 +141,13 @@ func (c *Component) renderCreateMultiple() string {
 		resultContent = "\n" + styles.MutedStyle.Render(msg.Content)
 	}
 
-	return styles.BaseStyle.PaddingLeft(2).PaddingTop(1).Render(content + resultContent)
+	return toolcommon.RenderToolMessage(c.width, content+resultContent)
 }
 
 func (c *Component) renderList() string {
 	msg := c.message
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.HighlightStyle.Render(displayName))
+	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
@@ -178,13 +178,13 @@ func (c *Component) renderList() string {
 		content += "\n" + strings.Join(styledLines, "\n")
 	}
 
-	return styles.BaseStyle.PaddingLeft(2).PaddingTop(1).Render(content)
+	return toolcommon.RenderToolMessage(c.width, content)
 }
 
 func (c *Component) renderUpdate() string {
 	msg := c.message
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.HighlightStyle.Render(displayName))
+	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
@@ -209,13 +209,13 @@ func (c *Component) renderUpdate() string {
 		resultContent = "\n" + styles.MutedStyle.Render(msg.Content)
 	}
 
-	return styles.BaseStyle.PaddingLeft(2).PaddingTop(1).Render(content + resultContent)
+	return toolcommon.RenderToolMessage(c.width, content+resultContent)
 }
 
 func (c *Component) renderDefault() string {
 	msg := c.message
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.HighlightStyle.Render(displayName))
+	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
@@ -226,5 +226,5 @@ func (c *Component) renderDefault() string {
 		resultContent = "\n" + styles.MutedStyle.Render(msg.Content)
 	}
 
-	return styles.BaseStyle.PaddingLeft(2).PaddingTop(1).Render(content + resultContent)
+	return toolcommon.RenderToolMessage(c.width, content+resultContent)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/glamour/v2"
 
 	"github.com/rumpl/rb/pkg/tools/builtin"
+	"github.com/rumpl/rb/pkg/tui/components/markdown"
 	"github.com/rumpl/rb/pkg/tui/components/spinner"
 	"github.com/rumpl/rb/pkg/tui/components/toolcommon"
 	"github.com/rumpl/rb/pkg/tui/core/layout"
@@ -42,6 +43,7 @@ func New(
 func (c *Component) SetSize(width, height int) tea.Cmd {
 	c.width = width
 	c.height = height
+	c.renderer = markdown.NewRenderer(toolcommon.ContentWidthFromContainer(width))
 	return nil
 }
 
@@ -72,10 +74,16 @@ func (c *Component) View() string {
 	}
 
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s %s", toolcommon.Icon(msg.ToolStatus), styles.HighlightStyle.Render(displayName), styles.MutedStyle.Render(args.Path))
+	content := fmt.Sprintf("%s %s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName), styles.MutedStyle.Render(args.Path))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
+	}
+
+	// Account for border (1 char) + padding (2 left + 2 right) = 5 chars total
+	availableWidth := c.width - 1 - 4 // 1 for border, 4 for padding (2 left + 2 right)
+	if availableWidth < 10 {
+		availableWidth = 10 // Minimum readable width
 	}
 
 	if msg.ToolCall.Function.Arguments != "" {
@@ -84,8 +92,8 @@ func (c *Component) View() string {
 
 	var resultContent string
 	if (msg.ToolStatus == types.ToolStatusCompleted || msg.ToolStatus == types.ToolStatusError) && msg.Content != "" {
-		resultContent = toolcommon.FormatToolResult(msg.Content, c.width)
+		resultContent = toolcommon.FormatToolResult(msg.Content, availableWidth)
 	}
 
-	return styles.BaseStyle.PaddingLeft(2).Render(content + resultContent)
+	return toolcommon.RenderToolMessage(c.width, content+resultContent)
 }

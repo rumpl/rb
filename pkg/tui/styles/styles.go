@@ -153,12 +153,16 @@ var (
 
 // Text Styles
 var (
-	HighlightStyle = BaseStyle.Foreground(Accent)
-	MutedStyle     = BaseStyle.Foreground(TextMuted)
-	SubtleStyle    = BaseStyle.Foreground(TextSubtle)
-	SecondaryStyle = BaseStyle.Foreground(TextSecondary)
-	BoldStyle      = BaseStyle.Bold(true)
-	ItalicStyle    = BaseStyle.Italic(true)
+	HighlightStyle     = BaseStyle.Foreground(Accent)
+	MutedStyle         = BaseStyle.Foreground(TextMuted)
+	SubtleStyle        = BaseStyle.Foreground(TextSubtle)
+	SecondaryStyle     = BaseStyle.Foreground(TextSecondary)
+	BoldStyle          = BaseStyle.Bold(true)
+	ItalicStyle        = BaseStyle.Italic(true)
+	ToolCallTitleStyle = BaseStyle.
+				Foreground(Accent).
+				Bold(true).
+				Background(BackgroundAlt)
 )
 
 // Status Styles
@@ -200,6 +204,13 @@ var (
 				BorderForeground(BorderPrimary).
 				Bold(true).
 				Background(BackgroundAlt)
+
+	AssistantMessageBorderStyle = BaseStyle.
+					Padding(1, 2).
+					BorderLeft(true).
+					BorderStyle(lipgloss.ThickBorder()).
+					BorderForeground(BorderSecondary).
+					Background(BackgroundAlt)
 )
 
 // Dialog Styles
@@ -308,7 +319,8 @@ var (
 		// PaddingLeft(1).
 		BorderLeft(true).
 		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(BorderSecondary)
+		BorderForeground(BorderSecondary).
+		Background(BackgroundAlt)
 
 	ToolCallArgKey = BaseStyle.Bold(true).Foreground(TextSecondary)
 
@@ -316,7 +328,8 @@ var (
 		// PaddingLeft(1).
 		BorderLeft(true).
 		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(BorderSecondary)
+		BorderForeground(BorderSecondary).
+		Background(BackgroundAlt)
 
 	ToolCallResultKey = BaseStyle.Bold(true).Foreground(TextSecondary)
 )
@@ -399,12 +412,14 @@ var (
 	AgentBadgeStyle = BaseStyle.
 			Foreground(AgentBadge).
 			Bold(true).
-			Padding(0, 1)
+			Padding(0, 1).
+			Background(BackgroundAlt)
 
 	TransferBadgeStyle = BaseStyle.
 				Foreground(TransferBadge).
 				Bold(true).
-				Padding(0, 1)
+				Padding(0, 1).
+				Background(BackgroundAlt)
 )
 
 // Deprecated styles (kept for backward compatibility)
@@ -502,18 +517,17 @@ func MarkdownStyle() ansi.StyleConfig {
 	linkColor := ColorAccentBlue
 	strongColor := ColorTextPrimary
 	codeColor := ColorTextPrimary
-	codeBgColor := ColorBackgroundAlt
 	blockquoteColor := ColorTextSecondary
 	listColor := ColorTextPrimary
 	hrColor := ColorBorderSecondary
-	codeBg := ColorBackgroundAlt
 
 	customDarkStyle := ansi.StyleConfig{
 		Document: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
-				BlockPrefix: "",
-				BlockSuffix: "",
-				Color:       stringPtr(ANSIColor252),
+				BlockPrefix:     "",
+				BlockSuffix:     "",
+				Color:           stringPtr(ANSIColor252),
+				BackgroundColor: stringPtr(ColorBackgroundAlt),
 			},
 			Margin: uintPtr(0),
 		},
@@ -620,13 +634,14 @@ func MarkdownStyle() ansi.StyleConfig {
 				Prefix:          " ",
 				Suffix:          " ",
 				Color:           &codeColor,
-				BackgroundColor: &codeBgColor,
+				BackgroundColor: stringPtr(ColorBackgroundAlt),
 			},
 		},
 		CodeBlock: ansi.StyleCodeBlock{
 			StyleBlock: ansi.StyleBlock{
 				StylePrimitive: ansi.StylePrimitive{
-					Color: stringPtr(ANSIColor244),
+					Color:           stringPtr(ANSIColor244),
+					BackgroundColor: stringPtr(ColorBackgroundAlt),
 				},
 				Margin: uintPtr(defaultMargin),
 			},
@@ -711,7 +726,7 @@ func MarkdownStyle() ansi.StyleConfig {
 					Color: stringPtr(ChromaGenericSubheadingColor),
 				},
 				Background: ansi.StylePrimitive{
-					BackgroundColor: stringPtr(ChromaBackgroundColor),
+					BackgroundColor: stringPtr(ColorBackgroundAlt),
 				},
 			},
 		},
@@ -726,7 +741,11 @@ func MarkdownStyle() ansi.StyleConfig {
 	}
 
 	customDarkStyle.List.Color = &listColor
-	customDarkStyle.CodeBlock.BackgroundColor = &codeBg
+	// Don't set code block background - let the parent container handle it
+	bg := ColorBackgroundAlt
+	customDarkStyle.CodeBlock.BackgroundColor = &bg
+	customDarkStyle.Code.BackgroundColor = &bg
+	customDarkStyle.CodeBlock.Chroma.Background.BackgroundColor = &bg
 
 	return customDarkStyle
 }

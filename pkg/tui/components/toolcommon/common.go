@@ -74,3 +74,20 @@ func wrapLines(text string, width int) []string {
 
 	return lines
 }
+
+// RenderToolMessage wraps arbitrary tool output in the same container used for assistant
+// messages so both share identical padding, border, and background treatment.
+func RenderToolMessage(width int, content string) string {
+	trimmed := strings.TrimRight(content, "\n")
+	return styles.AssistantMessageBorderStyle.Width(width).Render(trimmed)
+}
+
+// ContentWidthFromContainer returns the usable width inside an assistant message
+// once borders and padding are removed. Ensures a minimum width for readability.
+func ContentWidthFromContainer(width int) int {
+	inner := width - 5 // 1 border + 2 padding on each side
+	if inner < 10 {
+		return 10
+	}
+	return inner
+}

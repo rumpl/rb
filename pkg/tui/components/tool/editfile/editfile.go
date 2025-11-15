@@ -76,20 +76,26 @@ func (c *Component) View() string {
 	}
 
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s %s", toolcommon.Icon(msg.ToolStatus), styles.HighlightStyle.Render(displayName), styles.MutedStyle.Render(args.Path))
+	content := fmt.Sprintf("%s %s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName), styles.MutedStyle.Render(args.Path))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
 	}
 
+	// Account for border (1 char) + padding (2 left + 2 right) = 5 chars total
+	availableWidth := c.width - 1 - 4 // 1 for border, 4 for padding (2 left + 2 right)
+	if availableWidth < 10 {
+		availableWidth = 10 // Minimum readable width
+	}
+
 	if msg.ToolCall.Function.Arguments != "" {
-		content += "\n\n" + styles.ToolCallResult.Render(renderEditFile(msg.ToolCall, c.width-4, c.sessionState.SplitDiffView, msg.ToolStatus))
+		content += "\n\n" + styles.ToolCallResult.Render(renderEditFile(msg.ToolCall, availableWidth, c.sessionState.SplitDiffView, msg.ToolStatus))
 	}
 
 	var resultContent string
 	if (msg.ToolStatus == types.ToolStatusCompleted || msg.ToolStatus == types.ToolStatusError) && msg.Content != "" {
-		resultContent = toolcommon.FormatToolResult(msg.Content, c.width)
+		resultContent = toolcommon.FormatToolResult(msg.Content, availableWidth)
 	}
 
-	return styles.BaseStyle.PaddingLeft(2).PaddingTop(1).Render(content + resultContent)
+	return toolcommon.RenderToolMessage(c.width, content+resultContent)
 }

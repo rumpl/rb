@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/glamour/v2"
 
 	"github.com/rumpl/rb/pkg/tools/builtin"
+	"github.com/rumpl/rb/pkg/tui/components/markdown"
 	"github.com/rumpl/rb/pkg/tui/components/spinner"
 	"github.com/rumpl/rb/pkg/tui/components/toolcommon"
 	"github.com/rumpl/rb/pkg/tui/core/layout"
@@ -43,6 +44,7 @@ func New(
 func (c *Component) SetSize(width, height int) tea.Cmd {
 	c.width = width
 	c.height = height
+	c.renderer = markdown.NewRenderer(toolcommon.ContentWidthFromContainer(width))
 	return nil
 }
 
@@ -73,7 +75,7 @@ func (c *Component) View() string {
 	}
 
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s %s", toolcommon.Icon(msg.ToolStatus), styles.HighlightStyle.Render(displayName), styles.MutedStyle.Render(args.Path))
+	content := fmt.Sprintf("%s %s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName), styles.MutedStyle.Render(args.Path))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
@@ -84,5 +86,5 @@ func (c *Component) View() string {
 		resultContent = "\n\n" + styles.ToolCallResult.Render(toolcommon.RenderFile(args.Path, msg.Content, c.renderer))
 	}
 
-	return styles.BaseStyle.PaddingLeft(2).Render(content + resultContent)
+	return toolcommon.RenderToolMessage(c.width, content+resultContent)
 }
