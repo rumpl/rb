@@ -1,10 +1,9 @@
 package tool
 
 import (
-	"sync"
-
 	"github.com/charmbracelet/glamour/v2"
 
+	"github.com/rumpl/rb/pkg/tui/components/registry"
 	"github.com/rumpl/rb/pkg/tui/core/layout"
 	"github.com/rumpl/rb/pkg/tui/service"
 	"github.com/rumpl/rb/pkg/tui/types"
@@ -18,26 +17,21 @@ type ComponentBuilder func(
 ) layout.Model
 
 // Registry manages tool component builders.
-type Registry struct {
-	mu       sync.RWMutex
-	builders map[string]ComponentBuilder
-}
+type Registry = registry.Registry[string, ComponentBuilder]
 
+// NewRegistry creates a new tool component registry.
 func NewRegistry() *Registry {
-	return &Registry{
-		builders: make(map[string]ComponentBuilder),
+	return registry.New[string, ComponentBuilder]()
+}
+
+// Factory creates tool components using the registry.
+type Factory struct {
+	*registry.Factory[string, ComponentBuilder]
+}
+
+// NewFactory creates a new tool factory.
+func NewFactory(reg *Registry) *Factory {
+	return &Factory{
+		Factory: registry.NewFactory[string, ComponentBuilder](reg),
 	}
-}
-
-func (r *Registry) Register(toolName string, builder ComponentBuilder) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.builders[toolName] = builder
-}
-
-func (r *Registry) Get(toolName string) (ComponentBuilder, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	builder, exists := r.builders[toolName]
-	return builder, exists
 }

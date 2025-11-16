@@ -15,19 +15,7 @@ import (
 	"github.com/rumpl/rb/pkg/tui/types"
 )
 
-// Factory creates tool components using the registry.
-// It looks up registered component builders and falls back to a default component
-// if no specific builder is registered for a tool.
-type Factory struct {
-	registry *Registry
-}
-
-func NewFactory(registry *Registry) *Factory {
-	return &Factory{
-		registry: registry,
-	}
-}
-
+// Create creates a tool component, using registered builders or falling back to default.
 func (f *Factory) Create(
 	msg *types.Message,
 	renderer *glamour.TermRenderer,
@@ -35,7 +23,7 @@ func (f *Factory) Create(
 ) layout.Model {
 	toolName := msg.ToolCall.Function.Name
 
-	if builder, ok := f.registry.Get(toolName); ok {
+	if builder, ok := f.GetBuilder(toolName); ok {
 		return builder(msg, renderer, sessionState)
 	}
 
@@ -48,18 +36,18 @@ var (
 )
 
 func newDefaultRegistry() *Registry {
-	registry := NewRegistry()
+	reg := NewRegistry()
 
-	registry.Register(builtin.ToolNameTransferTask, transfertask.New)
-	registry.Register(builtin.ToolNameEditFile, editfile.New)
-	registry.Register(builtin.ToolNameWriteFile, writefile.New)
-	registry.Register(builtin.ToolNameReadFile, readfile.New)
-	registry.Register(builtin.ToolNameCreateTodo, todotool.New)
-	registry.Register(builtin.ToolNameCreateTodos, todotool.New)
-	registry.Register(builtin.ToolNameUpdateTodo, todotool.New)
-	registry.Register(builtin.ToolNameListTodos, todotool.New)
+	reg.Register(builtin.ToolNameTransferTask, transfertask.New)
+	reg.Register(builtin.ToolNameEditFile, editfile.New)
+	reg.Register(builtin.ToolNameWriteFile, writefile.New)
+	reg.Register(builtin.ToolNameReadFile, readfile.New)
+	reg.Register(builtin.ToolNameCreateTodo, todotool.New)
+	reg.Register(builtin.ToolNameCreateTodos, todotool.New)
+	reg.Register(builtin.ToolNameUpdateTodo, todotool.New)
+	reg.Register(builtin.ToolNameListTodos, todotool.New)
 
-	return registry
+	return reg
 }
 
 func New(
