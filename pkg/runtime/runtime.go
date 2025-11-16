@@ -230,11 +230,12 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 
 		// Set elicitation handler on all MCP toolsets before getting tools
 		a := r.CurrentAgent()
-		events <- StreamStarted(sess.ID, a.Name())
 		messages := sess.GetMessages(a)
 		if sess.SendUserMessage {
 			events <- UserMessage(messages[len(messages)-1].Content)
 		}
+
+		events <- StreamStarted(sess.ID, a.Name())
 
 		defer r.finalizeEventChannel(sess, events)
 
