@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"strings"
@@ -265,6 +266,60 @@ func New(opts ...Opt) *Session {
 	return s
 }
 
+// buildOtherAgentsToolsInfo creates a system message describing tools available to other agents
+func (s *Session) buildOtherAgentsToolsInfo(agents []*agent.Agent) string {
+	if len(agents) == 0 {
+		return ""
+	}
+
+	var toolsInfo strings.Builder
+	toolsInfo.WriteString("## Other Agents' Capabilities\n\n")
+	toolsInfo.WriteString("The following agents have access to specialized tools. ")
+	toolsInfo.WriteString("DO NOT attempt to call these tools directly - they are not available to you. ")
+	toolsInfo.WriteString("Instead, use the 'handoff' function to transfer the conversation to the appropriate agent when their capabilities are needed.\n\n")
+
+	for _, ag := range agents {
+		// Get tools for this agent using a background context
+		// We use context.Background() here since this is just for informational purposes
+		ctx := context.Background()
+		tools, err := ag.Tools(ctx)
+		if err != nil {
+			slog.Warn("Failed to get tools for agent", "agent", ag.Name(), "error", err)
+			continue
+		}
+
+		if len(tools) == 0 {
+			continue
+		}
+
+		toolsInfo.WriteString("### Agent: ")
+		toolsInfo.WriteString(ag.Name())
+		toolsInfo.WriteString("\n")
+		if ag.Description() != "" {
+			toolsInfo.WriteString("Description: ")
+			toolsInfo.WriteString(ag.Description())
+			toolsInfo.WriteString("\n")
+		}
+		toolsInfo.WriteString("Available tools:\n")
+
+		for _, tool := range tools {
+			toolsInfo.WriteString("- **")
+			toolsInfo.WriteString(tool.Name)
+			toolsInfo.WriteString("**")
+			if tool.Description != "" {
+				toolsInfo.WriteString(": ")
+				toolsInfo.WriteString(tool.Description)
+			}
+			toolsInfo.WriteString("\n")
+		}
+		toolsInfo.WriteString("\n")
+	}
+
+	result := toolsInfo.String()
+
+	return result
+}
+
 func (s *Session) GetMessages(a *agent.Agent) []chat.Message {
 	slog.Debug("Getting messages for agent", "agent", a.Name(), "session_id", s.ID)
 
@@ -284,8 +339,17 @@ func (s *Session) GetMessages(a *agent.Agent) []chat.Message {
 
 		messages = append(messages, chat.Message{
 			Role:    chat.MessageRoleSystem,
-			Content: "You are part of a multi-agent team. Your goal is to answer the user query in the most helpful way possible.\n\nAvailable agents in your team:\n" + agentsInfo + "\nYou can hand off the conversation to any of these agents at any time by using the `handoff` function with their ID. The valid agent IDs are: " + strings.Join(validAgentIDs, ", ") + ".\n\nWhen to hand off:\n- If another agent's description indicates they are better suited for the current task or question\n- If the user explicitly asks for a specific agent\n- If you need specialized capabilities that another agent provides\n\nIf you are the best agent to handle the current request based on your capabilities and description, respond directly. When transferring to another agent, use only the function call without generating additional text.\n\n",
+			Content: "You are part of a multi-agent team. Your goal is to answer the user query in the most helpful way possible.\n\nAvailable agents in your team:\n" + agentsInfo + "\nYou can hand off the conversation to any of these agents at any time by using the `handoff` function with their ID. The valid agent IDs are: " + strings.Join(validAgentIDs, ", ") + ".\n\nWhen to hand off:\n- If another agent's description indicates they are better suited for the current task or question\n\n- If any of the tools of the agent indicate that this agent is able to respond correctly- If the user explicitly asks for a specific agent\n- If you need specialized capabilities that another agent provides\n\nIf you are the best agent to handle the current request based on your capabilities and description, respond directly. When transferring to another agent, use only the function call without generating additional text.\n\n Once you are done, handoff the conversation to the root agent.",
 		})
+
+		// Add information about tools available to other agents
+		otherAgentsToolsInfo := s.buildOtherAgentsToolsInfo(allAgents)
+		if otherAgentsToolsInfo != "" {
+			messages = append(messages, chat.Message{
+				Role:    chat.MessageRoleSystem,
+				Content: otherAgentsToolsInfo,
+			})
+		}
 	}
 
 	content := a.Instruction()
