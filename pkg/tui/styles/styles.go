@@ -17,30 +17,30 @@ const (
 // Color hex values (used throughout the file)
 const (
 	// Primary colors
-	ColorAccentBlue      = "#FF9E64" // Warm orange (was soft blue)
-	ColorMutedBlue       = "#8B6F47" // Muted brown-orange (was dark blue-grey)
+	ColorAccentBlue      = "#FF69B4" // Hot pink
+	ColorMutedBlue       = "#C76B98" // Muted pink
 	ColorBackgroundAlt   = "#24283B" // Slightly lighter background (kept blue)
-	ColorBorderSecondary = "#6B5844" // Dark brown-orange (was dark blue-grey)
-	ColorTextPrimary     = "#FFD7A8" // Light peach (was light blue-white)
-	ColorTextSecondary   = "#FFBA7A" // Medium orange (was medium blue-grey)
+	ColorBorderSecondary = "#8B5A7D" // Dark mauve-pink
+	ColorTextPrimary     = "#FFB3D9" // Light pink
+	ColorTextSecondary   = "#FF8FC7" // Medium pink
 	ColorSuccessGreen    = "#9ECE6A" // Soft green (kept for semantic meaning)
 	ColorErrorRed        = "#F7768E" // Soft red (kept for semantic meaning)
 	ColorWarningYellow   = "#E0AF68" // Soft yellow (kept for semantic meaning)
 
-	// Spinner glow colors (transition from base orange towards white)
-	ColorSpinnerDim       = "#FFAA80" // Light orange
-	ColorSpinnerBright    = "#FFC9A8" // Much lighter orange
-	ColorSpinnerBrightest = "#FFE5D0" // Very light peach, near white
+	// Spinner glow colors (transition from base pink towards white)
+	ColorSpinnerDim       = "#FF85C0" // Light pink
+	ColorSpinnerBright    = "#FFB3D9" // Much lighter pink
+	ColorSpinnerBrightest = "#FFE0F0" // Very light pink, near white
 
 	// Background colors
 	ColorBackground = "#1A1B26" // Dark blue-black (kept blue)
 
 	// Status colors
-	ColorInfoCyan = "#FFA85C" // Bright orange (was soft cyan)
+	ColorInfoCyan = "#FF91D7" // Bright pink
 
 	// Badge colors
-	ColorAgentBadge    = "#FF8C42" // Vibrant orange (was soft purple)
-	ColorTransferBadge = "#FFAA70" // Light orange (was soft cyan)
+	ColorAgentBadge    = "#FF6BB5" // Vibrant pink
+	ColorTransferBadge = "#FFAAE0" // Light pink
 
 	// Diff colors
 	ColorDiffAddBg    = "#20303B" // Dark blue-green
@@ -55,8 +55,8 @@ const (
 	ColorDiffWordRemoveBg = "#4F2D3A" // Medium dark burgundy with red tint
 
 	// Interactive element colors
-	ColorSelected = "#364A82" // Dark blue for selected items
-	ColorHover    = "#2D3F5F" // Slightly lighter than selected
+	ColorSelected = "#5A3A5F" // Dark mauve for selected items
+	ColorHover    = "#4A2D4F" // Slightly lighter than selected
 )
 
 // Chroma syntax highlighting colors (Monokai theme)
@@ -508,18 +508,18 @@ func ChromaStyle() *chroma.Style {
 }
 
 func MarkdownStyle() ansi.StyleConfig {
-	h1Color := ColorAccentBlue            // Now warm orange
-	h2Color := ColorAccentBlue            // Now warm orange
-	h3Color := ColorTextSecondary         // Now medium orange
-	h4Color := ColorTextSecondary         // Now medium orange
-	h5Color := ColorTextSecondary         // Now medium orange
-	h6Color := ColorMutedBlue             // Now muted brown-orange
-	linkColor := ColorAccentBlue          // Now warm orange
-	strongColor := ColorTextPrimary       // Now light peach
-	codeColor := ColorTextPrimary         // Now light peach
-	blockquoteColor := ColorTextSecondary // Now medium orange
-	listColor := ColorTextPrimary         // Now light peach
-	hrColor := ColorBorderSecondary       // Now dark brown-orange
+	h1Color := ColorAccentBlue            // Now hot pink
+	h2Color := ColorAccentBlue            // Now hot pink
+	h3Color := ColorTextSecondary         // Now medium pink
+	h4Color := ColorTextSecondary         // Now medium pink
+	h5Color := ColorTextSecondary         // Now medium pink
+	h6Color := ColorMutedBlue             // Now muted pink
+	linkColor := ColorAccentBlue          // Now hot pink
+	strongColor := ColorTextPrimary       // Now light pink
+	codeColor := ColorTextPrimary         // Now light pink
+	blockquoteColor := ColorTextSecondary // Now medium pink
+	listColor := ColorTextPrimary         // Now light pink
+	hrColor := ColorBorderSecondary       // Now dark mauve-pink
 
 	customDarkStyle := ansi.StyleConfig{
 		Document: ansi.StyleBlock{
