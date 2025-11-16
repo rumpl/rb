@@ -106,12 +106,7 @@ func (c *Component) renderCreate() string {
 		}
 	}
 
-	var resultContent string
-	if (msg.ToolStatus == types.ToolStatusCompleted || msg.ToolStatus == types.ToolStatusError) && msg.Content != "" {
-		resultContent = "\n" + styles.MutedStyle.Render(msg.Content)
-	}
-
-	return toolcommon.RenderToolMessage(c.width, content+resultContent)
+	return toolcommon.RenderToolMessage(c.width, content)
 }
 
 func (c *Component) renderCreateMultiple() string {
@@ -136,12 +131,7 @@ func (c *Component) renderCreateMultiple() string {
 		}
 	}
 
-	var resultContent string
-	if (msg.ToolStatus == types.ToolStatusCompleted || msg.ToolStatus == types.ToolStatusError) && msg.Content != "" {
-		resultContent = "\n" + styles.MutedStyle.Render(msg.Content)
-	}
-
-	return toolcommon.RenderToolMessage(c.width, content+resultContent)
+	return toolcommon.RenderToolMessage(c.width, content)
 }
 
 func (c *Component) renderList() string {
@@ -204,12 +194,7 @@ func (c *Component) renderUpdate() string {
 		}
 	}
 
-	var resultContent string
-	if (msg.ToolStatus == types.ToolStatusCompleted || msg.ToolStatus == types.ToolStatusError) && msg.Content != "" {
-		resultContent = "\n" + styles.MutedStyle.Render(msg.Content)
-	}
-
-	return toolcommon.RenderToolMessage(c.width, content+resultContent)
+	return toolcommon.RenderToolMessage(c.width, content)
 }
 
 func (c *Component) renderDefault() string {
@@ -221,10 +206,5 @@ func (c *Component) renderDefault() string {
 		content += " " + c.spinner.View()
 	}
 
-	var resultContent string
-	if (msg.ToolStatus == types.ToolStatusCompleted || msg.ToolStatus == types.ToolStatusError) && msg.Content != "" {
-		resultContent = "\n" + styles.MutedStyle.Render(msg.Content)
-	}
-
-	return toolcommon.RenderToolMessage(c.width, content+resultContent)
+	return toolcommon.RenderToolMessage(c.width, content)
 }
