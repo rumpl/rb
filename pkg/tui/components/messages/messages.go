@@ -659,6 +659,7 @@ func (m *model) AddToolResult(msg *runtime.ToolCallResponseEvent, status types.T
 			return view.Init()
 		}
 	}
+
 	return nil
 }
 

@@ -68,7 +68,7 @@ func (c *Component) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 func (c *Component) View() string {
 	msg := c.message
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName))
+	content := fmt.Sprintf("%s  %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
@@ -76,19 +76,13 @@ func (c *Component) View() string {
 
 	// Account for border (1 char) + padding (2 left + 2 right) = 5 chars total
 	// Inner padding is 2 left, so available width is width - border - left padding - right padding
-	availableWidth := c.width - 1 - 4 // 1 for border, 4 for padding (2 left + 2 right)
-	if availableWidth < 10 {
-		availableWidth = 10 // Minimum readable width
-	}
+	availableWidth := max(
+		// 1 for border, 4 for padding (2 left + 2 right)
+		c.width-1-4, 10)
 
 	if msg.ToolCall.Function.Arguments != "" {
 		content += "\n" + renderToolArgs(msg.ToolCall, availableWidth)
 	}
 
-	var resultContent string
-	if (msg.ToolStatus == types.ToolStatusCompleted || msg.ToolStatus == types.ToolStatusError) && msg.Content != "" {
-		resultContent = toolcommon.FormatToolResult(msg.Content, availableWidth)
-	}
-
-	return toolcommon.RenderToolMessage(c.width, content+resultContent)
+	return toolcommon.RenderToolMessage(c.width, content)
 }

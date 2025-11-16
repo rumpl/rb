@@ -190,6 +190,7 @@ func (r *LocalRuntime) CurrentAgent() *agent.Agent {
 func (r *LocalRuntime) registerDefaultTools() {
 	slog.Debug("Registering default tools")
 	r.toolMap[builtin.ToolNameTransferTask] = r.handleTaskTransfer
+	r.toolMap[builtin.ToolNameHandoff] = r.handleHandoff
 	slog.Debug("Registered default tools", "count", len(r.toolMap))
 }
 
@@ -218,29 +219,6 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 		r.setElicitationEventsChannel(events)
 		defer r.clearElicitationEventsChannel()
 
-		// Set elicitation handler on all MCP toolsets before getting tools
-		a := r.CurrentAgent()
-
-		r.emitAgentWarnings(a, events)
-
-		for _, toolset := range a.ToolSets() {
-			toolset.SetElicitationHandler(r.elicitationHandler)
-			toolset.SetOAuthSuccessHandler(func() {
-				events <- Authorization("confirmed", r.currentAgent)
-			})
-		}
-
-		agentTools, err := r.getTools(ctx, a, sessionSpan, events)
-		if err != nil {
-			events <- Error(fmt.Sprintf("failed to get tools: %v", err))
-			return
-		}
-
-		messages := sess.GetMessages(a)
-		if sess.SendUserMessage {
-			events <- UserMessage(messages[len(messages)-1].Content)
-		}
-
 		// Start title generation in a goroutine when we have the first user message
 		if sess.Title == "" && len(sess.GetAllMessages()) > 0 {
 			r.titleGenerationWg.Add(1)
@@ -250,7 +228,13 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 			}()
 		}
 
+		// Set elicitation handler on all MCP toolsets before getting tools
+		a := r.CurrentAgent()
 		events <- StreamStarted(sess.ID, a.Name())
+		messages := sess.GetMessages(a)
+		if sess.SendUserMessage {
+			events <- UserMessage(messages[len(messages)-1].Content)
+		}
 
 		defer r.finalizeEventChannel(sess, events)
 
@@ -261,6 +245,24 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 		runtimeMaxIterations := sess.MaxIterations
 
 		for {
+			// Set elicitation handler on all MCP toolsets before getting tools
+			a := r.CurrentAgent()
+
+			r.emitAgentWarnings(a, events)
+
+			for _, toolset := range a.ToolSets() {
+				toolset.SetElicitationHandler(r.elicitationHandler)
+				toolset.SetOAuthSuccessHandler(func() {
+					events <- Authorization("confirmed", r.currentAgent)
+				})
+			}
+
+			agentTools, err := r.getTools(ctx, a, sessionSpan, events)
+			if err != nil {
+				events <- Error(fmt.Sprintf("failed to get tools: %v", err))
+				return
+			}
+
 			// Check iteration limit
 			if runtimeMaxIterations > 0 && iteration >= runtimeMaxIterations {
 				slog.Debug("Maximum iterations reached", "agent", a.Name(), "iterations", iteration, "max", runtimeMaxIterations)
@@ -297,7 +299,7 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 			}
 			slog.Debug("Starting conversation loop iteration", "agent", a.Name())
 			// Looping, get the updated messages from the session
-			messages := sess.GetMessages(a)
+			messages = sess.GetMessages(a)
 			slog.Debug("Retrieved messages for processing", "agent", a.Name(), "message_count", len(messages))
 
 			streamCtx, streamSpan := r.startSpan(ctx, "runtime.stream", trace.WithAttributes(
@@ -900,6 +902,25 @@ func (r *LocalRuntime) startSpan(ctx context.Context, name string, opts ...trace
 		return ctx, trace.SpanFromContext(ctx)
 	}
 	return r.tracer.Start(ctx, name, opts...)
+}
+
+func (r *LocalRuntime) handleHandoff(ctx context.Context, sess *session.Session, toolCall tools.ToolCall, evts chan Event) (*tools.ToolCallResult, error) {
+	var params builtin.HandoffArgs
+	if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &params); err != nil {
+		return nil, fmt.Errorf("invalid arguments: %w", err)
+	}
+
+	ca := r.currentAgent
+	child, err := r.team.Agent(params.Agent)
+	if err != nil {
+		return nil, err
+	}
+
+	r.currentAgent = child.Name()
+
+	return &tools.ToolCallResult{
+		Output: fmt.Sprintf("The agent %s handed off the conversation to you, look at the history of the conversation and continue where it left off. Once you are done with your task or if the user asks you, handoff the conversation back to %s.", ca, ca),
+	}, nil
 }
 
 func (r *LocalRuntime) handleTaskTransfer(ctx context.Context, sess *session.Session, toolCall tools.ToolCall, evts chan Event) (*tools.ToolCallResult, error) {

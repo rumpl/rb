@@ -69,10 +69,9 @@ func renderToolArgs(toolCall tools.ToolCall, width int) string {
 		// Account for the key label and colon
 		keyLabel := kv.Key + ":"
 		keyWidth := len(keyLabel)
-		contentWidth := width - keyWidth - 2 // 2 for spacing
-		if contentWidth < 10 {
-			contentWidth = 10
-		}
+		contentWidth := max(
+			// 2 for spacing
+			width-keyWidth-2, 10)
 
 		// Wrap long lines in content
 		wrappedContent := wrapContentLines(content, contentWidth)
@@ -93,7 +92,7 @@ func wrapContentLines(content string, width int) string {
 	}
 
 	var lines []string
-	for _, line := range strings.Split(content, "\n") {
+	for line := range strings.SplitSeq(content, "\n") {
 		for len(line) > width {
 			// Find the last space before width to break at word boundary
 			breakPoint := width
