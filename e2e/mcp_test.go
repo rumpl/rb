@@ -14,7 +14,7 @@ func TestMCP_SingleAgent(t *testing.T) {
 	t.Parallel()
 
 	ctx := t.Context()
-	_, runtimeConfig := startRecordingAIProxy(t)
+	runtimeConfig := startRecordingAIProxy(t)
 
 	team, err := teamloader.Load(ctx, "testdata/basic.yaml", runtimeConfig)
 	require.NoError(t, err, "Failed to load agent")

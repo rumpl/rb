@@ -15,7 +15,7 @@ func TestRuntime_OpenAI_Basic(t *testing.T) {
 	t.Parallel()
 
 	ctx := t.Context()
-	_, runtimeConfig := startRecordingAIProxy(t)
+	runtimeConfig := startRecordingAIProxy(t)
 
 	team, err := teamloader.Load(ctx, "testdata/basic.yaml", runtimeConfig)
 	require.NoError(t, err)
@@ -36,7 +36,7 @@ func TestRuntime_Mistral_Basic(t *testing.T) {
 	t.Parallel()
 
 	ctx := t.Context()
-	_, runtimeConfig := startRecordingAIProxy(t)
+	runtimeConfig := startRecordingAIProxy(t)
 
 	team, err := teamloader.Load(ctx, "testdata/basic.yaml", runtimeConfig, teamloader.WithModelOverrides([]string{"mistral/mistral-small"}))
 	require.NoError(t, err)

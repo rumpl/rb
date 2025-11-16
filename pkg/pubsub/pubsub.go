@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 )
 
@@ -77,7 +78,7 @@ func (h *Hub[T]) Publish(ctx context.Context, event T) {
 				// Recover from panics in subscribers to prevent one bad subscriber
 				// from affecting others
 				if r := recover(); r != nil {
-					// Log the panic if needed, but don't propagate it
+					slog.Debug("recovering", "err", r)
 				}
 			}()
 			s(ctx, event)

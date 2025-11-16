@@ -185,7 +185,6 @@ func LoadFrom(ctx context.Context, source AgentSource, runtimeConfig config.Runt
 		}
 
 		if len(agentConfig.SubAgents) > 0 {
-			// agentTools = append(agentTools, builtin.NewTransferTaskTool())
 			agentTools = append(agentTools, builtin.NewHandoffTool())
 		}
 

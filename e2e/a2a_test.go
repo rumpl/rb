@@ -41,7 +41,7 @@ type Part struct {
 func TestA2AServer_AgentCard(t *testing.T) {
 	t.Parallel()
 
-	_, runtimeConfig := startRecordingAIProxy(t)
+	runtimeConfig := startRecordingAIProxy(t)
 	agentCard := startA2AServer(t, "testdata/basic.yaml", runtimeConfig)
 
 	assert.Equal(t, "root", agentCard.Name)
@@ -55,7 +55,7 @@ func TestA2AServer_AgentCard(t *testing.T) {
 func TestA2AServer_Invoke(t *testing.T) {
 	t.Parallel()
 
-	_, runtimeConfig := startRecordingAIProxy(t)
+	runtimeConfig := startRecordingAIProxy(t)
 	agentCard := startA2AServer(t, "testdata/basic.yaml", runtimeConfig)
 
 	requestID := "test-request-1"
@@ -111,7 +111,7 @@ func TestA2AServer_Invoke(t *testing.T) {
 func TestA2AServer_MultipleRequests(t *testing.T) {
 	t.Parallel()
 
-	_, runtimeConfig := startRecordingAIProxy(t)
+	runtimeConfig := startRecordingAIProxy(t)
 	agentCard := startA2AServer(t, "testdata/basic.yaml", runtimeConfig)
 
 	messages := []string{
@@ -169,7 +169,7 @@ func TestA2AServer_MultipleRequests(t *testing.T) {
 func TestA2AServer_MultiAgent(t *testing.T) {
 	t.Parallel()
 
-	_, runtimeConfig := startRecordingAIProxy(t)
+	runtimeConfig := startRecordingAIProxy(t)
 	agentCard := startA2AServer(t, "testdata/multi.yaml", runtimeConfig)
 
 	requestID := "test-multi-1"
