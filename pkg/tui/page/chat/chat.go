@@ -161,6 +161,11 @@ func (p *chatPage) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 		return p, tea.Batch(cmds...)
 
 	case tea.KeyPressMsg:
+		// Handle Ctrl+C globally before routing to focused component
+		if msg.String() == "ctrl+c" {
+			return p, tea.Quit
+		}
+
 		if msg.String() == "tab" && p.focusedPanel == PanelEditor {
 			if p.editor.AcceptSuggestion() {
 				return p, nil
