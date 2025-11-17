@@ -238,7 +238,7 @@ func (e *editor) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 		return e, nil
 	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "enter":
+		case "ctrl+enter":
 			if !e.textarea.Focused() {
 				return e, nil
 			}
