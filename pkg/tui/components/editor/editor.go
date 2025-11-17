@@ -314,7 +314,7 @@ func (e *editor) View() string {
 		view = e.applySuggestionOverlay(view)
 	}
 
-	return view
+	return lipgloss.NewStyle().Padding(1, 0).Render(view)
 }
 
 // SetSize sets the dimensions of the component

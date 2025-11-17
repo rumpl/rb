@@ -333,7 +333,7 @@ func (m *model) View() string {
 	scrollbarView := m.scrollbar.View()
 
 	if scrollbarView != "" {
-		return lipgloss.JoinHorizontal(lipgloss.Top, contentView, scrollbarView)
+		return lipgloss.JoinHorizontal(lipgloss.Top, contentView, " ", scrollbarView)
 	}
 
 	return contentView
@@ -341,8 +341,8 @@ func (m *model) View() string {
 
 // SetSize sets the dimensions of the component
 func (m *model) SetSize(width, height int) tea.Cmd {
-	// Reserve 1 character for scrollbar
-	m.width = width - 2
+	// Reserve space for scrollbar: 1 for space + 1 for scrollbar + 1 for padding
+	m.width = width - 3
 	m.height = height
 
 	for _, view := range m.views {
