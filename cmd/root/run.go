@@ -212,11 +212,7 @@ func handleRunMode(ctx context.Context, agentFilename string, rt runtime.Runtime
 	a := app.New(agentFilename, rt, sess, firstMessage)
 	m := tui.New(a)
 
-	progOpts := []tea.ProgramOption{
-		tea.WithContext(ctx),
-		tea.WithFilter(tui.MouseEventFilter),
-	}
-
+	progOpts := []tea.ProgramOption{tea.WithContext(ctx)}
 	p := tea.NewProgram(m, progOpts...)
 
 	go a.Subscribe(ctx, p)

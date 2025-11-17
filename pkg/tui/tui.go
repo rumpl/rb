@@ -29,19 +29,6 @@ import (
 
 var lastMouseEvent time.Time
 
-// MouseEventFilter filters mouse events to prevent spam
-func MouseEventFilter(_ tea.Model, msg tea.Msg) tea.Msg {
-	switch msg.(type) {
-	case tea.MouseWheelMsg, tea.MouseMotionMsg, tea.MouseMsg:
-		now := time.Now()
-		if now.Sub(lastMouseEvent) < 20*time.Millisecond {
-			return nil
-		}
-		lastMouseEvent = now
-	}
-	return msg
-}
-
 // appModel represents the main application model
 type appModel struct {
 	application     *app.App
