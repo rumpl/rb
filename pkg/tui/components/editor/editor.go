@@ -59,7 +59,7 @@ type editor struct {
 func New(a *app.App, hist *history.History) Editor {
 	ta := textarea.New()
 	ta.SetStyles(styles.InputStyle)
-	ta.Placeholder = "Type your message here..."
+	ta.Placeholder = "Type your message here... \n \n"
 	ta.Prompt = "│ "
 	ta.CharLimit = -1
 	ta.SetWidth(50)
@@ -314,26 +314,7 @@ func (e *editor) View() string {
 		view = e.applySuggestionOverlay(view)
 	}
 
-	// Ensure all lines have the background color applied across full width
-	lines := strings.Split(view, "\n")
-
-	// Style for lines with background - must render spaces to make background visible
-	lineStyle := styles.BaseStyle.Background(styles.BackgroundAlt).Width(e.width)
-
-	// Apply background to all existing lines by padding them to full width
-	for i, line := range lines {
-		// Strip the line content and re-render with background
-		plainText := stripANSI(line)
-		lines[i] = lineStyle.Render(plainText)
-	}
-
-	// Fill remaining lines with background-colored empty lines to match allocated height
-	emptyLine := lineStyle.Render("")
-	for len(lines) < e.height {
-		lines = append(lines, emptyLine)
-	}
-
-	return strings.Join(lines, "\n")
+	return view
 }
 
 // SetSize sets the dimensions of the component

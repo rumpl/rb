@@ -338,14 +338,10 @@ var (
 var (
 	InputStyle = textarea.Styles{
 		Focused: textarea.StyleState{
-			Base:        BaseStyle.Background(BackgroundAlt),
-			Placeholder: BaseStyle.Foreground(PlaceholderColor).Background(BackgroundAlt),
-			CursorLine:  BaseStyle.Background(BackgroundAlt),
+			Placeholder: BaseStyle.Foreground(PlaceholderColor),
 		},
 		Blurred: textarea.StyleState{
-			Base:        BaseStyle.Background(BackgroundAlt),
-			Placeholder: BaseStyle.Foreground(PlaceholderColor).Background(BackgroundAlt),
-			CursorLine:  BaseStyle.Background(BackgroundAlt),
+			Placeholder: BaseStyle.Foreground(PlaceholderColor),
 		},
 		Cursor: textarea.CursorStyle{
 			Color: Accent,
