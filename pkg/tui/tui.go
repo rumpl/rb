@@ -3,7 +3,6 @@ package tui
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
@@ -26,8 +25,6 @@ import (
 	"github.com/rumpl/rb/pkg/tui/service"
 	"github.com/rumpl/rb/pkg/tui/styles"
 )
-
-var lastMouseEvent time.Time
 
 // appModel represents the main application model
 type appModel struct {
