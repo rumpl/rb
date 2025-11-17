@@ -671,6 +671,9 @@ func (m *model) AppendToLastMessage(agentName string, messageType types.MessageT
 		return nil
 	}
 
+	// Check if we're at the bottom before appending
+	wasAtBottom := m.isAtBottom()
+
 	lastIdx := len(m.messages) - 1
 	lastMsg := m.messages[lastIdx]
 
@@ -678,6 +681,14 @@ func (m *model) AppendToLastMessage(agentName string, messageType types.MessageT
 		lastMsg.Content += content
 		m.views[lastIdx].(message.Model).SetMessage(lastMsg)
 		m.invalidateItem(lastIdx)
+
+		// Auto-scroll to bottom if we were already at the bottom
+		if wasAtBottom {
+			return func() tea.Msg {
+				m.scrollToBottom()
+				return nil
+			}
+		}
 		return nil
 	} else {
 		msg := types.Agent(messageType, agentName, content)
@@ -686,11 +697,20 @@ func (m *model) AppendToLastMessage(agentName string, messageType types.MessageT
 		view := m.createMessageView(msg)
 		m.views = append(m.views, view)
 
-		var cmd tea.Cmd
+		var cmds []tea.Cmd
 		if initCmd := view.Init(); initCmd != nil {
-			cmd = initCmd
+			cmds = append(cmds, initCmd)
 		}
-		return cmd
+
+		// Auto-scroll to bottom if we were already at the bottom
+		if wasAtBottom {
+			cmds = append(cmds, func() tea.Msg {
+				m.scrollToBottom()
+				return nil
+			})
+		}
+
+		return tea.Batch(cmds...)
 	}
 }
 
