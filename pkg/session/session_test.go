@@ -87,7 +87,7 @@ func TestTrimMessagesWithToolCalls(t *testing.T) {
 }
 
 func TestGetMessages(t *testing.T) {
-	testAgent := &agent.Agent{}
+	testAgent := agent.New("test", "test instruction")
 
 	s := New()
 
@@ -98,7 +98,7 @@ func TestGetMessages(t *testing.T) {
 		}))
 	}
 
-	messages := s.GetMessages(testAgent)
+	messages := s.GetMessages(t.Context(), testAgent)
 
 	// Count non-system messages (since system messages are not limited)
 	nonSystemCount := 0
@@ -112,7 +112,7 @@ func TestGetMessages(t *testing.T) {
 }
 
 func TestGetMessagesWithToolCalls(t *testing.T) {
-	testAgent := &agent.Agent{}
+	testAgent := agent.New("test", "test instruction")
 
 	s := New()
 
@@ -141,7 +141,7 @@ func TestGetMessagesWithToolCalls(t *testing.T) {
 	maxMessages = 2
 	defer func() { maxMessages = oldMax }()
 
-	messages := s.GetMessages(testAgent)
+	messages := s.GetMessages(t.Context(), testAgent)
 
 	toolCalls := make(map[string]bool)
 	for _, msg := range messages {
@@ -157,7 +157,7 @@ func TestGetMessagesWithToolCalls(t *testing.T) {
 }
 
 func TestGetMessagesWithSummary(t *testing.T) {
-	testAgent := &agent.Agent{}
+	testAgent := agent.New("test", "test instruction")
 
 	s := New()
 
@@ -181,7 +181,7 @@ func TestGetMessagesWithSummary(t *testing.T) {
 		Content: "response after summary",
 	}))
 
-	messages := s.GetMessages(testAgent)
+	messages := s.GetMessages(t.Context(), testAgent)
 
 	// Count non-system messages (user and assistant only)
 	userAssistantMessages := 0

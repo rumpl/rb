@@ -320,7 +320,7 @@ func (s *Session) buildOtherAgentsToolsInfo(agents []*agent.Agent) string {
 	return result
 }
 
-func (s *Session) GetMessages(a *agent.Agent) []chat.Message {
+func (s *Session) GetMessages(ctx context.Context, a *agent.Agent) []chat.Message {
 	slog.Debug("Getting messages for agent", "agent", a.Name(), "session_id", s.ID)
 
 	var messages []chat.Message
@@ -352,7 +352,7 @@ func (s *Session) GetMessages(a *agent.Agent) []chat.Message {
 		}
 	}
 
-	content := a.Instruction()
+	content := a.Instruction(ctx)
 
 	if a.AddDate() {
 		content += "\n\n" + "Today's date: " + time.Now().Format("2006-01-02")

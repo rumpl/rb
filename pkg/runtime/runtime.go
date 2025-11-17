@@ -230,7 +230,7 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 
 		// Set elicitation handler on all MCP toolsets before getting tools
 		a := r.CurrentAgent()
-		messages := sess.GetMessages(a)
+		messages := sess.GetMessages(ctx, a)
 		if sess.SendUserMessage {
 			events <- UserMessage(messages[len(messages)-1].Content)
 		}
@@ -300,7 +300,7 @@ func (r *LocalRuntime) RunStream(ctx context.Context, sess *session.Session) <-c
 			}
 			slog.Debug("Starting conversation loop iteration", "agent", a.Name())
 			// Looping, get the updated messages from the session
-			messages = sess.GetMessages(a)
+			messages = sess.GetMessages(ctx, a)
 			slog.Debug("Retrieved messages for processing", "agent", a.Name(), "message_count", len(messages))
 
 			streamCtx, streamSpan := r.startSpan(ctx, "runtime.stream", trace.WithAttributes(

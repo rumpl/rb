@@ -61,7 +61,7 @@ func TestSessionNumHistoryItems(t *testing.T) {
 				})
 			}
 
-			messages := s.GetMessages(testAgent)
+			messages := s.GetMessages(t.Context(), testAgent)
 
 			// Count conversation messages (non-system)
 			conversationCount := 0

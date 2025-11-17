@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
+	"strings"
 
 	"github.com/rumpl/rb/pkg/model/provider"
 	"github.com/rumpl/rb/pkg/tools"
@@ -12,22 +13,25 @@ import (
 
 // Agent represents an AI agent
 type Agent struct {
-	name               string
-	description        string
-	welcomeMessage     string
-	instruction        string
-	toolsets           []*StartableToolSet
-	models             []provider.Provider
-	subAgents          []*Agent
-	parents            []*Agent
-	addDate            bool
-	addEnvironmentInfo bool
-	maxIterations      int
-	numHistoryItems    int
-	addPromptFiles     []string
-	tools              []tools.Tool
-	commands           map[string]string
-	pendingWarnings    []string
+	name                string
+	description         string
+	welcomeMessage      string
+	instruction         string
+	expandedInstruction string // cached expanded instruction
+	instructionExpanded bool   // flag to track if expansion was done
+	expansionError      error  // any error during expansion
+	toolsets            []*StartableToolSet
+	models              []provider.Provider
+	subAgents           []*Agent
+	parents             []*Agent
+	addDate             bool
+	addEnvironmentInfo  bool
+	maxIterations       int
+	numHistoryItems     int
+	addPromptFiles      []string
+	tools               []tools.Tool
+	commands            map[string]string
+	pendingWarnings     []string
 }
 
 // New creates a new agent
@@ -48,9 +52,47 @@ func (a *Agent) Name() string {
 	return a.name
 }
 
-// Instruction returns the agent's instructions
-func (a *Agent) Instruction() string {
-	return a.instruction
+// Instruction returns the agent's instructions, expanding any JavaScript template expressions.
+// Template expressions use ${tool_name({args})} syntax.
+// The expansion is performed once and cached for subsequent calls.
+func (a *Agent) Instruction(ctx context.Context) string {
+	// Return cached result if already expanded
+	if a.instructionExpanded {
+		return a.expandedInstruction
+	}
+
+	// Mark as expanded to avoid re-expansion
+	a.instructionExpanded = true
+	a.expandedInstruction = a.instruction
+
+	// Check if expansion is needed (fast path for static instructions)
+	if !strings.Contains(a.instruction, "${") {
+		return a.expandedInstruction
+	}
+
+	// Ensure toolsets are started before expansion
+	a.ensureToolSetsAreStarted(ctx)
+
+	// Collect all started toolsets
+	var toolSets []tools.ToolSet
+	for _, ts := range a.toolsets {
+		if ts.started.Load() {
+			toolSets = append(toolSets, ts.ToolSet)
+		}
+	}
+
+	// Expand instruction template
+	expanded, err := ExpandInstruction(ctx, a.instruction, toolSets)
+	if err != nil {
+		// Log warning but continue with original instruction
+		slog.Warn("Failed to expand instruction", "agent", a.Name(), "error", err)
+		a.expansionError = err
+		a.addToolWarning(fmt.Sprintf("instruction expansion failed: %v", err))
+		return a.expandedInstruction
+	}
+
+	a.expandedInstruction = expanded
+	return a.expandedInstruction
 }
 
 func (a *Agent) AddDate() bool {

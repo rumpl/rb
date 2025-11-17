@@ -438,7 +438,7 @@ func TestServer_RefreshAgentsFromDisk_UpdateAgent(t *testing.T) {
 
 	initialAgent, err := initialTeam.Agent("root")
 	require.NoError(t, err)
-	initialInstruction := initialAgent.Instruction()
+	initialInstruction := initialAgent.Instruction(ctx)
 
 	// Modify the agent file on disk
 	modifiedConfig := `version: "2"
@@ -461,7 +461,7 @@ agents:
 
 	updatedAgent, err := updatedTeam.Agent("root")
 	require.NoError(t, err)
-	updatedInstruction := updatedAgent.Instruction()
+	updatedInstruction := updatedAgent.Instruction(ctx)
 
 	assert.NotEqual(t, initialInstruction, updatedInstruction, "instruction should be updated")
 	assert.Contains(t, updatedInstruction, "UPDATED", "should have updated instruction")

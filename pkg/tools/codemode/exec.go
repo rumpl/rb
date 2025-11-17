@@ -3,13 +3,11 @@ package codemode
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"slices"
 
 	"github.com/dop251/goja"
 
-	"github.com/rumpl/rb/pkg/tools"
+	"github.com/rumpl/rb/pkg/js"
 )
 
 type ScriptResult struct {
@@ -29,15 +27,8 @@ func (c *codeModeTool) runJavascript(ctx context.Context, script string) (Script
 	_ = vm.Set("console", console(&stdOut, &stdErr))
 
 	// Inject every tool as a javascript function.
-	for _, toolset := range c.toolsets {
-		allTools, err := toolset.Tools(ctx)
-		if err != nil {
-			return ScriptResult{}, err
-		}
-
-		for _, tool := range allTools {
-			_ = vm.Set(tool.Name, callTool(ctx, tool))
-		}
+	if err := js.InjectTools(ctx, vm, c.toolsets); err != nil {
+		return ScriptResult{}, err
 	}
 
 	// Wrap the user script in an IIFE to allow top-level returns.
@@ -63,40 +54,4 @@ func (c *codeModeTool) runJavascript(ctx context.Context, script string) (Script
 		StdErr: stdErr.String(),
 		Value:  value,
 	}, nil
-}
-
-func callTool(ctx context.Context, tool tools.Tool) func(args map[string]any) (string, error) {
-	return func(args map[string]any) (string, error) {
-		var toolArgs struct {
-			Required []string `json:"required"`
-		}
-
-		if err := tools.ConvertSchema(tool.Parameters, &toolArgs); err != nil {
-			return "", err
-		}
-
-		nonNilArgs := make(map[string]any)
-		for k, v := range args {
-			if slices.Contains(toolArgs.Required, k) || v != nil {
-				nonNilArgs[k] = v
-			}
-		}
-
-		arguments, err := json.Marshal(nonNilArgs)
-		if err != nil {
-			return "", err
-		}
-
-		result, err := tool.Handler(ctx, tools.ToolCall{
-			Function: tools.FunctionCall{
-				Name:      tool.Name,
-				Arguments: string(arguments),
-			},
-		})
-		if err != nil {
-			return "", err
-		}
-
-		return result.Output, nil
-	}
 }
