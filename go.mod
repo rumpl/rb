@@ -4,28 +4,27 @@ go 1.25.3
 
 require (
 	charm.land/bubbles/v2 v2.0.0-beta.1.0.20251104200223-da0b892d1759
-	charm.land/bubbletea/v2 v2.0.0-rc.1.0.20251106195925-579e174cd7fa
+	charm.land/bubbletea/v2 v2.0.0-rc.1.0.20251117161017-15f884bd2973
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251106193318-19329a3e8410
 	dario.cat/mergo v1.0.2
 	github.com/JohannesKaufmann/html-to-markdown/v2 v2.4.0
 	github.com/Microsoft/go-winio v0.6.2
-	github.com/a2aproject/a2a-go v0.3.0
+	github.com/a2aproject/a2a-go v0.3.2
 	github.com/alecthomas/chroma/v2 v2.20.0
-	github.com/alpkeskin/gotoon v0.1.0
-	github.com/anthropics/anthropic-sdk-go v1.17.0
+	github.com/alpkeskin/gotoon v0.1.1
+	github.com/anthropics/anthropic-sdk-go v1.18.0
 	github.com/atotto/clipboard v0.1.4
 	github.com/aymanbagabas/go-udiff v0.3.1
 	github.com/charmbracelet/glamour/v2 v2.0.0-20251106195642-800eb8175930
-	github.com/charmbracelet/x/ansi v0.11.0
+	github.com/charmbracelet/x/ansi v0.11.1
 	github.com/coder/acp-go-sdk v0.6.3
 	github.com/dop251/goja v0.0.0-20251103141225-af2ceb9156d7
-	github.com/fatih/color v1.18.0
 	github.com/go-git/go-git/v5 v5.16.3
 	github.com/goccy/go-yaml v1.18.0
 	github.com/google/go-containerregistry v0.20.6
 	github.com/google/jsonschema-go v0.3.0
 	github.com/google/uuid v1.6.0
-	github.com/junegunn/fzf v0.66.1
+	github.com/junegunn/fzf v0.67.0
 	github.com/k3a/html2text v1.2.1
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/mattn/go-runewidth v0.0.19
@@ -34,7 +33,6 @@ require (
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	github.com/temoto/robotstxt v1.1.2
-	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.38.0
 	go.opentelemetry.io/otel/sdk v1.38.0
@@ -46,7 +44,7 @@ require (
 	google.golang.org/genai v1.35.0
 	gopkg.in/dnaeon/go-vcr.v4 v4.0.5
 	gotest.tools/v3 v3.5.2
-	modernc.org/sqlite v1.40.0
+	modernc.org/sqlite v1.40.1
 )
 
 require (
@@ -58,12 +56,12 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/charmbracelet/colorprofile v0.3.3 // indirect
-	github.com/charmbracelet/ultraviolet v0.0.0-20251106193841-7889546fc720 // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20251116181749-377898bcce38 // indirect
 	github.com/charmbracelet/x/exp/slice v0.0.0-20250327172914-2fdc97757edf // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
-	github.com/clipperhouse/displaywidth v0.4.1 // indirect
+	github.com/clipperhouse/displaywidth v0.5.0 // indirect
 	github.com/clipperhouse/stringish v0.1.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
@@ -123,8 +121,6 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/vbatts/tar-split v0.12.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
-	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	github.com/yuin/goldmark v1.7.13 // indirect
@@ -137,7 +133,7 @@ require (
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/net v0.46.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20251014184007-4626949a642f // indirect
