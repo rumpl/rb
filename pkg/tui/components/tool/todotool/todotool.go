@@ -6,15 +6,15 @@ import (
 	"github.com/rumpl/rb/pkg/tui/styles"
 )
 
-func renderTodoIcon(status string) (string, lipgloss.Style) {
+func renderTodoIcon(status string, theme *styles.Theme) (string, lipgloss.Style) {
 	switch status {
 	case "pending":
-		return "◯", styles.PendingStyle
+		return "◯", theme.PendingStyle
 	case "in-progress":
-		return "◕", styles.InProgressStyle
+		return "◕", theme.InProgressStyle
 	case "completed":
-		return "✓", styles.MutedStyle
+		return "✓", theme.MutedStyle
 	default:
-		return "?", styles.BaseStyle
+		return "?", theme.BaseStyle
 	}
 }

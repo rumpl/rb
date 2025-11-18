@@ -12,6 +12,7 @@ import (
 	"github.com/rumpl/rb/pkg/tui/components/tool/writefile"
 	"github.com/rumpl/rb/pkg/tui/core/layout"
 	"github.com/rumpl/rb/pkg/tui/service"
+	"github.com/rumpl/rb/pkg/tui/styles"
 	"github.com/rumpl/rb/pkg/tui/types"
 )
 
@@ -20,14 +21,15 @@ func (f *Factory) Create(
 	msg *types.Message,
 	renderer *glamour.TermRenderer,
 	sessionState *service.SessionState,
+	themeManager *styles.Manager,
 ) layout.Model {
 	toolName := msg.ToolCall.Function.Name
 
 	if builder, ok := f.GetBuilder(toolName); ok {
-		return builder(msg, renderer, sessionState)
+		return builder(msg, renderer, sessionState, themeManager)
 	}
 
-	return defaulttool.New(msg, renderer, sessionState)
+	return defaulttool.New(msg, renderer, sessionState, themeManager)
 }
 
 var (
@@ -54,6 +56,7 @@ func New(
 	msg *types.Message,
 	renderer *glamour.TermRenderer,
 	sessionState *service.SessionState,
+	themeManager *styles.Manager,
 ) layout.Model {
-	return defaultFactory.Create(msg, renderer, sessionState)
+	return defaultFactory.Create(msg, renderer, sessionState, themeManager)
 }

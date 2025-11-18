@@ -72,6 +72,9 @@ type chatPage struct {
 
 	history *history.History
 
+	// Theme management
+	themeManager *styles.Manager
+
 	// Cached layout dimensions
 	chatHeight  int
 	inputHeight int
@@ -97,21 +100,22 @@ func defaultKeyMap() KeyMap {
 }
 
 // New creates a new chat page
-func New(a *app.App, sessionState *service.SessionState) Page {
+func New(a *app.App, sessionState *service.SessionState, themeManager *styles.Manager) Page {
 	historyStore, err := history.New()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize command history: %v\n", err)
 	}
 
 	return &chatPage{
-		sidebar:      sidebar.New(sessionState.TodoManager),
-		messages:     messages.New(a, sessionState),
-		editor:       editor.New(a, historyStore),
+		sidebar:      sidebar.New(sessionState.TodoManager, themeManager),
+		messages:     messages.New(a, sessionState, themeManager),
+		editor:       editor.New(a, historyStore, themeManager),
 		focusedPanel: PanelEditor,
 		app:          a,
 		keyMap:       defaultKeyMap(),
 		history:      historyStore,
 		sessionState: sessionState,
+		themeManager: themeManager,
 	}
 }
 
@@ -277,7 +281,7 @@ func (p *chatPage) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 
 		// Open tool confirmation dialog
 		dialogCmd := core.CmdHandler(dialog.OpenDialogMsg{
-			Model: dialog.NewToolConfirmationDialog(msg, p.sessionState),
+			Model: dialog.NewToolConfirmationDialog(msg, p.sessionState, p.themeManager),
 		})
 
 		return p, tea.Batch(cmd, p.messages.ScrollToBottom(), spinnerCmd, dialogCmd)
@@ -305,7 +309,7 @@ func (p *chatPage) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 
 		// Open max iterations confirmation dialog
 		dialogCmd := core.CmdHandler(dialog.OpenDialogMsg{
-			Model: dialog.NewMaxIterationsDialog(msg.MaxIterations, p.app),
+			Model: dialog.NewMaxIterationsDialog(msg.MaxIterations, p.app, p.themeManager),
 		})
 
 		return p, tea.Batch(spinnerCmd, dialogCmd)
@@ -314,7 +318,7 @@ func (p *chatPage) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 
 		serverURL := msg.Meta["rb/server_url"].(string)
 		dialogCmd := core.CmdHandler(dialog.OpenDialogMsg{
-			Model: dialog.NewOAuthAuthorizationDialog(serverURL, p.app),
+			Model: dialog.NewOAuthAuthorizationDialog(serverURL, p.app, p.themeManager),
 		})
 
 		return p, tea.Batch(spinnerCmd, dialogCmd)
@@ -344,6 +348,7 @@ func (p *chatPage) setWorking(working bool) tea.Cmd {
 func (p *chatPage) View() string {
 	// Main chat content area (without input)
 	innerWidth := p.width // subtract app style padding
+	theme := p.themeManager.GetTheme()
 
 	var bodyContent string
 
@@ -351,7 +356,7 @@ func (p *chatPage) View() string {
 		// Left side: messages and editor stacked vertically
 		leftWidth := innerWidth - sidebarWidth
 
-		chatView := styles.ChatStyle.
+		chatView := theme.ChatStyle.
 			Height(p.chatHeight).
 			Width(leftWidth).
 			Render(p.messages.View())
@@ -379,7 +384,7 @@ func (p *chatPage) View() string {
 	} else {
 		sidebarWidth, sidebarHeight := p.sidebar.GetSize()
 
-		chatView := styles.ChatStyle.
+		chatView := theme.ChatStyle.
 			Height(p.chatHeight).
 			Width(innerWidth).
 			Render(p.messages.View())
@@ -400,7 +405,7 @@ func (p *chatPage) View() string {
 		)
 	}
 
-	return styles.AppStyle.
+	return theme.AppStyle.
 		Height(p.height).
 		Render(bodyContent)
 }

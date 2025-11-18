@@ -12,17 +12,19 @@ import (
 
 // Component represents a user message view
 type Component struct {
-	message *types.Message
-	width   int
-	height  int
+	message      *types.Message
+	width        int
+	height       int
+	themeManager *styles.Manager
 }
 
 // New creates a new user message component
-func New(msg *types.Message) layout.Model {
+func New(msg *types.Message, themeManager *styles.Manager) layout.Model {
 	return &Component{
-		message: msg,
-		width:   80,
-		height:  1,
+		message:      msg,
+		width:        80,
+		height:       1,
+		themeManager: themeManager,
 	}
 }
 
@@ -35,7 +37,8 @@ func (c *Component) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 }
 
 func (c *Component) View() string {
-	return styles.UserMessageBorderStyle.Width(c.width).Render(c.message.Content)
+	theme := c.themeManager.GetTheme()
+	return theme.UserMessageBorderStyle.Width(c.width).Render(c.message.Content)
 }
 
 func (c *Component) SetSize(width, height int) tea.Cmd {
@@ -49,7 +52,8 @@ func (c *Component) GetSize() (width, height int) {
 }
 
 func (c *Component) Height(width int) int {
-	content := styles.UserMessageBorderStyle.Width(width).Render(c.message.Content)
+	theme := c.themeManager.GetTheme()
+	content := theme.UserMessageBorderStyle.Width(width).Render(c.message.Content)
 	return strings.Count(content, "\n") + 1
 }
 

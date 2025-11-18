@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/rumpl/rb/pkg/tui/commands"
+	"github.com/rumpl/rb/pkg/tui/styles"
 )
 
 var categories = []commands.Category{
@@ -32,7 +33,8 @@ var categories = []commands.Category{
 }
 
 func TestCommandPaletteFiltering(t *testing.T) {
-	dialog := NewCommandPaletteDialog(categories)
+	themeManager := styles.NewManager(styles.ThemeDark)
+	dialog := NewCommandPaletteDialog(categories, themeManager)
 	d := dialog.(*commandPaletteDialog)
 
 	tests := []struct {

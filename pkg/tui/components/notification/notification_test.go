@@ -4,17 +4,21 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/rumpl/rb/pkg/tui/styles"
 )
 
 func TestNotification_InitialState(t *testing.T) {
-	n := New()
+	themeManager := styles.NewManager(styles.ThemeDark)
+	n := New(themeManager)
 
 	require.Empty(t, n.items)
 	require.False(t, n.Open())
 }
 
 func TestNotification_Show(t *testing.T) {
-	n := New()
+	themeManager := styles.NewManager(styles.ThemeDark)
+	n := New(themeManager)
 
 	updated, _ := n.Update(ShowMsg{Text: "Test notification"})
 
@@ -25,7 +29,8 @@ func TestNotification_Show(t *testing.T) {
 }
 
 func TestNotification_Hide(t *testing.T) {
-	n := New()
+	themeManager := styles.NewManager(styles.ThemeDark)
+	n := New(themeManager)
 
 	updated, _ := n.Update(ShowMsg{Text: "Test"})
 	require.Len(t, updated.items, 1)
@@ -38,7 +43,8 @@ func TestNotification_Hide(t *testing.T) {
 }
 
 func TestNotification_Position(t *testing.T) {
-	n := New()
+	themeManager := styles.NewManager(styles.ThemeDark)
+	n := New(themeManager)
 	n.SetSize(100, 50)
 	updated, _ := n.Update(ShowMsg{Text: "Test"})
 	row, col := updated.position()
@@ -48,7 +54,8 @@ func TestNotification_Position(t *testing.T) {
 }
 
 func TestNotification_GetLayer(t *testing.T) {
-	n := New()
+	themeManager := styles.NewManager(styles.ThemeDark)
+	n := New(themeManager)
 
 	require.Nil(t, n.GetLayer())
 

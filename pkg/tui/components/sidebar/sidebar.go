@@ -47,16 +47,18 @@ type model struct {
 	spinner      spinner.Spinner
 	mode         Mode
 	sessionTitle string
+	themeManager *styles.Manager
 }
 
-func New(manager *service.TodoManager) Model {
+func New(manager *service.TodoManager, themeManager *styles.Manager) Model {
 	return &model{
 		width:        20,
 		height:       24,
 		usage:        &runtime.Usage{},
-		todoComp:     todotool.NewSidebarComponent(manager),
-		spinner:      spinner.New(spinner.ModeSpinnerOnly),
+		todoComp:     todotool.NewSidebarComponent(manager, themeManager),
+		spinner:      spinner.New(spinner.ModeSpinnerOnly, themeManager),
 		sessionTitle: "New session",
+		themeManager: themeManager,
 	}
 }
 
@@ -143,6 +145,7 @@ func (m *model) View() string {
 }
 
 func (m *model) horizontalView() string {
+	theme := m.themeManager.GetTheme()
 	pwd := getCurrentWorkingDirectory()
 
 	wi := m.workingIndicator()
@@ -150,14 +153,15 @@ func (m *model) horizontalView() string {
 	title := fmt.Sprintf("%s%*s%s", m.sessionTitle, titleGapWidth, "", m.workingIndicator())
 
 	gapWidth := m.width - lipgloss.Width(pwd) - lipgloss.Width(m.tokenUsage()) - 2
-	return lipgloss.JoinVertical(lipgloss.Top, title, fmt.Sprintf("%s%*s%s", styles.MutedStyle.Render(pwd), gapWidth, "", m.tokenUsage()))
+	return lipgloss.JoinVertical(lipgloss.Top, title, fmt.Sprintf("%s%*s%s", theme.MutedStyle.Render(pwd), gapWidth, "", m.tokenUsage()))
 }
 
 func (m *model) verticalView() string {
+	theme := m.themeManager.GetTheme()
 	topContent := m.sessionTitle + "\n"
 
 	if pwd := getCurrentWorkingDirectory(); pwd != "" {
-		topContent += styles.MutedStyle.Render(pwd) + "\n\n"
+		topContent += theme.MutedStyle.Render(pwd) + "\n\n"
 	}
 
 	topContent += m.tokenUsage()
@@ -178,7 +182,7 @@ func (m *model) verticalView() string {
 	}
 	topContent += todoContent
 
-	return styles.BaseStyle.
+	return theme.BaseStyle.
 		Width(m.width).
 		Height(m.height-2).
 		Align(lipgloss.Left, lipgloss.Top).
@@ -186,12 +190,13 @@ func (m *model) verticalView() string {
 }
 
 func (m *model) workingIndicator() string {
+	theme := m.themeManager.GetTheme()
 	if m.mcpInit || m.working {
 		label := "Working..."
 		if m.mcpInit {
 			label = "Initializing MCP servers..."
 		}
-		indicator := styles.ActiveStyle.Render(m.spinner.View() + " " + label)
+		indicator := theme.ActiveStyle.Render(m.spinner.View() + " " + label)
 		return indicator
 	}
 
@@ -199,15 +204,16 @@ func (m *model) workingIndicator() string {
 }
 
 func (m *model) tokenUsage() string {
+	theme := m.themeManager.GetTheme()
 	totalTokens := m.usage.InputTokens + m.usage.OutputTokens
 	var usagePercent float64
 	if m.usage.ContextLimit > 0 {
 		usagePercent = (float64(m.usage.ContextLength) / float64(m.usage.ContextLimit)) * 100
 	}
 
-	percentageText := styles.MutedStyle.Render(fmt.Sprintf("%.0f%%", usagePercent))
-	totalTokensText := styles.SubtleStyle.Render(fmt.Sprintf("(%s)", formatTokenCount(totalTokens)))
-	costText := styles.MutedStyle.Render(fmt.Sprintf("$%.2f", m.usage.Cost))
+	percentageText := theme.MutedStyle.Render(fmt.Sprintf("%.0f%%", usagePercent))
+	totalTokensText := theme.SubtleStyle.Render(fmt.Sprintf("(%s)", formatTokenCount(totalTokens)))
+	costText := theme.MutedStyle.Render(fmt.Sprintf("$%.2f", m.usage.Cost))
 
 	return fmt.Sprintf("%s %s %s", percentageText, totalTokensText, costText)
 }

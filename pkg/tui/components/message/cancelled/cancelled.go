@@ -12,17 +12,19 @@ import (
 
 // Component represents a cancelled message view
 type Component struct {
-	message *types.Message
-	width   int
-	height  int
+	message      *types.Message
+	width        int
+	height       int
+	themeManager *styles.Manager
 }
 
 // New creates a new cancelled message component
-func New(msg *types.Message) layout.Model {
+func New(msg *types.Message, themeManager *styles.Manager) layout.Model {
 	return &Component{
-		message: msg,
-		width:   80,
-		height:  1,
+		message:      msg,
+		width:        80,
+		height:       1,
+		themeManager: themeManager,
 	}
 }
 
@@ -35,7 +37,8 @@ func (c *Component) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 }
 
 func (c *Component) View() string {
-	return styles.WarningStyle.Render("⚠ stream cancelled ⚠")
+	theme := c.themeManager.GetTheme()
+	return theme.WarningStyle.Render("⚠ stream cancelled ⚠")
 }
 
 func (c *Component) SetSize(width, height int) tea.Cmd {
@@ -49,7 +52,8 @@ func (c *Component) GetSize() (width, height int) {
 }
 
 func (c *Component) Height(width int) int {
-	content := styles.WarningStyle.Render("⚠ stream cancelled ⚠")
+	theme := c.themeManager.GetTheme()
+	content := theme.WarningStyle.Render("⚠ stream cancelled ⚠")
 	return strings.Count(content, "\n") + 1
 }
 

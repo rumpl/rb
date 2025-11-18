@@ -10,14 +10,16 @@ import (
 
 // StatusBar represents the status bar component that displays key bindings help
 type StatusBar struct {
-	width int
-	help  core.KeyMapHelp
+	width        int
+	help         core.KeyMapHelp
+	themeManager *styles.Manager
 }
 
 // New creates a new StatusBar instance
-func New(help core.KeyMapHelp) StatusBar {
+func New(help core.KeyMapHelp, themeManager *styles.Manager) StatusBar {
 	return StatusBar{
-		help: help,
+		help:         help,
+		themeManager: themeManager,
 	}
 }
 
@@ -28,9 +30,10 @@ func (s *StatusBar) SetWidth(width int) {
 
 // View renders the status bar
 func (s *StatusBar) View() string {
-	versionText := styles.MutedStyle.Render("rb " + version.Version)
+	theme := s.themeManager.GetTheme()
+	versionText := theme.MutedStyle.Render("rb " + version.Version)
 
-	return styles.BaseStyle.
+	return theme.BaseStyle.
 		Width(s.width).
 		PaddingLeft(1).
 		PaddingRight(1).

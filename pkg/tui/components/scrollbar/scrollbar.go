@@ -26,13 +26,16 @@ type Model struct {
 
 	trackChar string
 	thumbChar string
+
+	themeManager *styles.Manager
 }
 
-func New() *Model {
+func New(themeManager *styles.Manager) *Model {
 	return &Model{
-		width:     1,
-		trackChar: "│",
-		thumbChar: "█",
+		width:        1,
+		trackChar:    "│",
+		thumbChar:    "█",
+		themeManager: themeManager,
 	}
 }
 
@@ -96,6 +99,7 @@ func (m *Model) View() string {
 		return ""
 	}
 
+	theme := m.themeManager.GetTheme()
 	thumbTop, thumbHeight := m.calculateThumbPosition()
 	lines := make([]string, m.height)
 
@@ -104,10 +108,10 @@ func (m *Model) View() string {
 		var char string
 
 		if i >= thumbTop && i < thumbTop+thumbHeight {
-			style = styles.ThumbStyle
+			style = theme.ThumbStyle
 			char = m.thumbChar
 		} else {
-			style = styles.TrackStyle
+			style = theme.TrackStyle
 			char = m.trackChar
 		}
 

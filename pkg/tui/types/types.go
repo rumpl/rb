@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/rumpl/rb/pkg/tools"
+	"github.com/rumpl/rb/pkg/tui/styles"
 )
 
 // MessageType represents different types of messages
@@ -106,4 +107,9 @@ type Todo struct {
 	ID          string `json:"id"`
 	Description string `json:"description"`
 	Status      string `json:"status"`
+}
+
+// ThemeChangeMsg is sent when the theme needs to be changed.
+type ThemeChangeMsg struct {
+	Theme styles.ThemeName
 }

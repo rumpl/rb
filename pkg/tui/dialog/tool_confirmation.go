@@ -33,6 +33,7 @@ type toolConfirmationDialog struct {
 	keyMap        toolConfirmationKeyMap
 	sessionState  *service.SessionState
 	scrollView    messages.Model
+	themeManager  *styles.Manager
 }
 
 // SetSize implements [Dialog].
@@ -45,21 +46,23 @@ func (d *toolConfirmationDialog) SetSize(width, height int) tea.Cmd {
 	contentWidth := dialogWidth - 6
 	maxDialogHeight := (height * 80) / 100
 
-	titleStyle := styles.DialogTitleStyle.Width(contentWidth)
+	theme := d.themeManager.GetTheme()
+
+	titleStyle := theme.DialogTitleStyle.Width(contentWidth)
 	title := titleStyle.Render("Tool Confirmation")
 	titleHeight := lipgloss.Height(title)
 
 	separatorWidth := max(contentWidth-10, 20)
-	separator := styles.DialogSeparatorStyle.
+	separator := theme.DialogSeparatorStyle.
 		Align(lipgloss.Center).
 		Width(contentWidth).
 		Render(strings.Repeat("─", separatorWidth))
 	separatorHeight := lipgloss.Height(separator)
 
-	question := styles.DialogQuestionStyle.Width(contentWidth).Render("Do you want to allow this tool call?")
+	question := theme.DialogQuestionStyle.Width(contentWidth).Render("Do you want to allow this tool call?")
 	questionHeight := lipgloss.Height(question)
 
-	options := styles.DialogOptionsStyle.Width(contentWidth).Render("[Y]es    [N]o    [A]ll (approve all tools this session)")
+	options := theme.DialogOptionsStyle.Width(contentWidth).Render("[Y]es    [N]o    [A]ll (approve all tools this session)")
 	optionsHeight := lipgloss.Height(options)
 
 	// Calculate available height for scroll view
@@ -96,9 +99,9 @@ func defaultToolConfirmationKeyMap() toolConfirmationKeyMap {
 }
 
 // NewToolConfirmationDialog creates a new tool confirmation dialog
-func NewToolConfirmationDialog(msg *runtime.ToolCallConfirmationEvent, sessionState *service.SessionState) Dialog {
+func NewToolConfirmationDialog(msg *runtime.ToolCallConfirmationEvent, sessionState *service.SessionState, themeManager *styles.Manager) Dialog {
 	// Create scrollable view with initial size (will be updated in SetSize)
-	scrollView := messages.NewScrollableView(100, 20, sessionState)
+	scrollView := messages.NewScrollableView(100, 20, sessionState, themeManager)
 
 	// Add the tool call message to the view
 	scrollView.AddOrUpdateToolCall(
@@ -113,6 +116,7 @@ func NewToolConfirmationDialog(msg *runtime.ToolCallConfirmationEvent, sessionSt
 		sessionState: sessionState,
 		keyMap:       defaultToolConfirmationKeyMap(),
 		scrollView:   scrollView,
+		themeManager: themeManager,
 	}
 }
 
@@ -164,20 +168,21 @@ func (d *toolConfirmationDialog) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 
 // View renders the tool confirmation dialog
 func (d *toolConfirmationDialog) View() string {
+	theme := d.themeManager.GetTheme()
 	dialogWidth := d.width * 70 / 100
 
 	// Content width (accounting for padding and borders)
 	contentWidth := dialogWidth - 6
 
-	dialogStyle := styles.DialogStyle.Width(dialogWidth)
+	dialogStyle := theme.DialogStyle.Width(dialogWidth)
 
 	// Title
-	titleStyle := styles.DialogTitleStyle.Width(contentWidth)
+	titleStyle := theme.DialogTitleStyle.Width(contentWidth)
 	title := titleStyle.Render("Tool Confirmation")
 
 	// Separator
 	separatorWidth := max(contentWidth-10, 20)
-	separator := styles.DialogSeparatorStyle.
+	separator := theme.DialogSeparatorStyle.
 		Align(lipgloss.Center).
 		Width(contentWidth).
 		Render(strings.Repeat("─", separatorWidth))
@@ -185,8 +190,8 @@ func (d *toolConfirmationDialog) View() string {
 	// Get scrollable tool call view
 	argumentsSection := d.scrollView.View()
 
-	question := styles.DialogQuestionStyle.Width(contentWidth).Render("Do you want to allow this tool call?")
-	options := styles.DialogOptionsStyle.Width(contentWidth).Render("[Y]es    [N]o    [A]ll (approve all tools this session)")
+	question := theme.DialogQuestionStyle.Width(contentWidth).Render("Do you want to allow this tool call?")
+	options := theme.DialogOptionsStyle.Width(contentWidth).Render("[Y]es    [N]o    [A]ll (approve all tools this session)")
 
 	// Combine all parts with proper spacing
 	parts := []string{title, separator}

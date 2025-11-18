@@ -38,11 +38,12 @@ type Editor interface {
 
 // editor implements [Editor]
 type editor struct {
-	textarea *textarea.Model
-	hist     *history.History
-	width    int
-	height   int
-	working  bool
+	textarea     *textarea.Model
+	hist         *history.History
+	width        int
+	height       int
+	working      bool
+	themeManager *styles.Manager
 	// completions are the available completions
 	completions []completions.Completion
 
@@ -56,9 +57,10 @@ type editor struct {
 }
 
 // New creates a new editor component
-func New(a *app.App, hist *history.History) Editor {
+func New(a *app.App, hist *history.History, themeManager *styles.Manager) Editor {
+	theme := themeManager.GetTheme()
 	ta := textarea.New()
-	ta.SetStyles(styles.InputStyle)
+	ta.SetStyles(theme.InputStyle)
 	ta.Placeholder = "Type your message here... \n \n"
 	ta.Prompt = "│ "
 	ta.CharLimit = -1
@@ -69,9 +71,10 @@ func New(a *app.App, hist *history.History) Editor {
 	ta.KeyMap.InsertNewline.SetEnabled(true) // Enable newline insertion
 
 	return &editor{
-		textarea:    ta,
-		hist:        hist,
-		completions: completions.Completions(a),
+		textarea:     ta,
+		hist:         hist,
+		completions:  completions.Completions(a),
+		themeManager: themeManager,
 	}
 }
 
@@ -126,7 +129,8 @@ func (e *editor) applySuggestionOverlay(view string) string {
 	promptWidth := runewidth.StringWidth(stripANSI(e.textarea.Prompt))
 	textWidth := runewidth.StringWidth(currentLine)
 
-	ghost := styles.SuggestionGhostStyle.Render(e.suggestion)
+	theme := e.themeManager.GetTheme()
+	ghost := theme.SuggestionGhostStyle.Render(e.suggestion)
 
 	baseLayer := lipgloss.NewLayer(view)
 	overlay := lipgloss.NewLayer(ghost).

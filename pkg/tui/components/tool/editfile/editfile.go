@@ -26,20 +26,23 @@ type Component struct {
 	width        int
 	height       int
 	sessionState *service.SessionState
+	themeManager *styles.Manager
 }
 
 func New(
 	msg *types.Message,
 	renderer *glamour.TermRenderer,
 	sessionState *service.SessionState,
+	themeManager *styles.Manager,
 ) layout.Model {
 	return &Component{
 		message:      msg,
 		renderer:     renderer,
-		spinner:      spinner.New(spinner.ModeSpinnerOnly),
+		spinner:      spinner.New(spinner.ModeSpinnerOnly, themeManager),
 		width:        80,
 		height:       1,
 		sessionState: sessionState,
+		themeManager: themeManager,
 	}
 }
 
@@ -76,7 +79,8 @@ func (c *Component) View() string {
 	}
 
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName), styles.MutedStyle.Render(args.Path))
+	theme := c.themeManager.GetTheme()
+	content := fmt.Sprintf("%s %s %s", toolcommon.Icon(msg.ToolStatus, c.themeManager), theme.ToolCallTitleStyle.Render(displayName), theme.MutedStyle.Render(args.Path))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
@@ -89,13 +93,13 @@ func (c *Component) View() string {
 	}
 
 	if msg.ToolCall.Function.Arguments != "" {
-		content += "\n\n" + styles.ToolCallResult.Render(renderEditFile(msg.ToolCall, availableWidth, c.sessionState.SplitDiffView, msg.ToolStatus))
+		content += "\n\n" + theme.ToolCallResult.Render(renderEditFile(msg.ToolCall, availableWidth, c.sessionState.SplitDiffView, msg.ToolStatus, c.themeManager))
 	}
 
 	var resultContent string
 	if (msg.ToolStatus == types.ToolStatusCompleted || msg.ToolStatus == types.ToolStatusError) && msg.Content != "" {
-		resultContent = toolcommon.FormatToolResult(msg.Content, availableWidth)
+		resultContent = toolcommon.FormatToolResult(msg.Content, availableWidth, c.themeManager)
 	}
 
-	return toolcommon.RenderToolMessage(c.width, content+resultContent)
+	return toolcommon.RenderToolMessage(c.width, content+resultContent, c.themeManager)
 }

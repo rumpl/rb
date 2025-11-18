@@ -12,6 +12,7 @@ import (
 	"github.com/rumpl/rb/pkg/tui/components/message/welcome"
 	"github.com/rumpl/rb/pkg/tui/components/registry"
 	"github.com/rumpl/rb/pkg/tui/core/layout"
+	"github.com/rumpl/rb/pkg/tui/styles"
 	"github.com/rumpl/rb/pkg/tui/types"
 )
 
@@ -28,12 +29,12 @@ func NewFactory(reg *Registry) *Factory {
 }
 
 // Create creates a message component, using registered builders or falling back to default.
-func (f *Factory) Create(msg *types.Message) layout.Model {
+func (f *Factory) Create(msg *types.Message, themeManager *styles.Manager) layout.Model {
 	if builder, ok := f.GetBuilder(msg.Type); ok {
-		return builder(msg)
+		return builder(msg, themeManager)
 	}
 
-	return defaultmsg.New(msg)
+	return defaultmsg.New(msg, themeManager)
 }
 
 var (
@@ -42,7 +43,7 @@ var (
 )
 
 // ComponentBuilder is a function that creates a message component.
-type ComponentBuilder func(msg *types.Message) layout.Model
+type ComponentBuilder func(msg *types.Message, themeManager *styles.Manager) layout.Model
 
 // Registry manages message component builders.
 type Registry = registry.Registry[types.MessageType, ComponentBuilder]
@@ -68,6 +69,6 @@ func newDefaultRegistry() *Registry {
 }
 
 // New creates a new message component using the default factory
-func New(msg *types.Message) layout.Model {
-	return defaultFactory.Create(msg)
+func New(msg *types.Message, themeManager *styles.Manager) layout.Model {
+	return defaultFactory.Create(msg, themeManager)
 }

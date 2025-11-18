@@ -8,24 +8,26 @@ import (
 	"github.com/rumpl/rb/pkg/tui/types"
 )
 
-func Icon(status types.ToolStatus) string {
+func Icon(status types.ToolStatus, themeManager *styles.Manager) string {
+	theme := themeManager.GetTheme()
 	switch status {
 	case types.ToolStatusPending:
 		return "⊙"
 	case types.ToolStatusRunning:
 		return "⚙"
 	case types.ToolStatusCompleted:
-		return styles.SuccessStyle.Render("✓")
+		return theme.SuccessStyle.Render("✓")
 	case types.ToolStatusError:
-		return styles.ErrorStyle.Render("✗")
+		return theme.ErrorStyle.Render("✗")
 	case types.ToolStatusConfirmation:
-		return styles.WarningStyle.Render("?")
+		return theme.WarningStyle.Render("?")
 	default:
-		return styles.WarningStyle.Render("?")
+		return theme.WarningStyle.Render("?")
 	}
 }
 
-func FormatToolResult(content string, width int) string {
+func FormatToolResult(content string, width int, themeManager *styles.Manager) string {
+	theme := themeManager.GetTheme()
 	var formattedContent string
 	var m map[string]any
 	if err := json.Unmarshal([]byte(content), &m); err != nil {
@@ -36,7 +38,7 @@ func FormatToolResult(content string, width int) string {
 		formattedContent = string(buf)
 	}
 
-	padding := styles.ToolCallResult.Padding().GetHorizontalPadding()
+	padding := theme.ToolCallResult.Padding().GetHorizontalPadding()
 	availableWidth := max(width-2-padding, 10) // Minimum readable width
 
 	lines := wrapLines(formattedContent, availableWidth)
@@ -50,7 +52,7 @@ func FormatToolResult(content string, width int) string {
 
 	trimmedContent := strings.Join(lines, "\n")
 	if trimmedContent != "" {
-		return "\n" + styles.ToolCallResult.Render(styles.ToolCallResultKey.Render("\n-> "+header+":")+"\n"+trimmedContent)
+		return "\n" + theme.ToolCallResult.Render(theme.ToolCallResultKey.Render("\n-> "+header+":")+"\n"+trimmedContent)
 	}
 
 	return ""
@@ -77,9 +79,10 @@ func wrapLines(text string, width int) []string {
 
 // RenderToolMessage wraps arbitrary tool output in the same container used for assistant
 // messages so both share identical padding, border, and background treatment.
-func RenderToolMessage(width int, content string) string {
+func RenderToolMessage(width int, content string, themeManager *styles.Manager) string {
+	theme := themeManager.GetTheme()
 	trimmed := strings.TrimRight(content, "\n")
-	return styles.AssistantMessageBorderStyle.Width(width).Render(trimmed)
+	return theme.AssistantMessageBorderStyle.Width(width).Render(trimmed)
 }
 
 // ContentWidthFromContainer returns the usable width inside an assistant message

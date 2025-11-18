@@ -7,6 +7,7 @@ import (
 
 	"github.com/rumpl/rb/pkg/tui/components/spinner"
 	"github.com/rumpl/rb/pkg/tui/core/layout"
+	"github.com/rumpl/rb/pkg/tui/styles"
 	"github.com/rumpl/rb/pkg/tui/types"
 )
 
@@ -19,12 +20,12 @@ type Component struct {
 }
 
 // New creates a new spinner message component
-func New(msg *types.Message) layout.Model {
+func New(msg *types.Message, themeManager *styles.Manager) layout.Model {
 	return &Component{
 		message: msg,
 		width:   80,
 		height:  1,
-		spinner: spinner.New(spinner.ModeBoth),
+		spinner: spinner.New(spinner.ModeBoth, themeManager),
 	}
 }
 

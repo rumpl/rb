@@ -15,19 +15,21 @@ import (
 
 // Component represents an assistant reasoning message view
 type Component struct {
-	message *types.Message
-	width   int
-	height  int
-	spinner spinner.Spinner
+	message      *types.Message
+	width        int
+	height       int
+	spinner      spinner.Spinner
+	themeManager *styles.Manager
 }
 
 // New creates a new assistant reasoning message component
-func New(msg *types.Message) layout.Model {
+func New(msg *types.Message, themeManager *styles.Manager) layout.Model {
 	return &Component{
-		message: msg,
-		width:   80,
-		height:  1,
-		spinner: spinner.New(spinner.ModeBoth),
+		message:      msg,
+		width:        80,
+		height:       1,
+		spinner:      spinner.New(spinner.ModeBoth, themeManager),
+		themeManager: themeManager,
 	}
 }
 
@@ -51,21 +53,22 @@ func (c *Component) View() string {
 	if c.message.Content == "" {
 		return c.spinner.View()
 	}
+	s := c.themeManager.GetTheme()
 	// Render through the markdown renderer to ensure proper wrapping to width
 	availableWidth := c.width - 1
 	if availableWidth < 10 {
 		availableWidth = 10
 	}
-	rendered, err := markdown.NewRenderer(availableWidth).Render(c.message.Content)
+	rendered, err := markdown.NewRenderer(availableWidth, c.themeManager).Render(c.message.Content)
 	if err != nil {
-		text := "Thinking: " + senderPrefix(c.message.Sender) + c.message.Content
+		text := "Thinking: " + c.senderPrefix(c.message.Sender) + c.message.Content
 		wrapped := wrapText(text, availableWidth)
-		return styles.MutedStyle.Italic(true).Render(wrapped)
+		return s.MutedStyle.Italic(true).Render(wrapped)
 	}
 	// Strip ANSI from inner rendering so muted style fully applies
 	clean := stripANSI(strings.TrimRight(rendered, "\n\r\t "))
-	thinkingText := "Thinking: " + senderPrefix(c.message.Sender) + clean
-	return styles.MutedStyle.Italic(true).Render(thinkingText)
+	thinkingText := "Thinking: " + c.senderPrefix(c.message.Sender) + clean
+	return s.MutedStyle.Italic(true).Render(thinkingText)
 }
 
 func (c *Component) SetSize(width, height int) tea.Cmd {
@@ -87,11 +90,12 @@ func (c *Component) SetMessage(msg *types.Message) {
 	c.message = msg
 }
 
-func senderPrefix(sender string) string {
+func (c *Component) senderPrefix(sender string) string {
 	if sender == "" {
 		return ""
 	}
-	return styles.AgentBadgeStyle.Render("["+sender+"]") + "\n"
+	theme := c.themeManager.GetTheme()
+	return theme.AgentBadgeStyle.Render("["+sender+"]") + "\n"
 }
 
 var ansiEscape = regexp.MustCompile("\x1b\\[[0-9;]*m")

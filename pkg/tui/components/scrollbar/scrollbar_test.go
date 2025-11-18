@@ -4,10 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/rumpl/rb/pkg/tui/styles"
 )
 
 func TestCalculateThumbPosition(t *testing.T) {
-	sb := New()
+	themeManager := styles.NewManager(styles.ThemeDark)
+	sb := New(themeManager)
 	sb.SetDimensions(10, 100)
 
 	// At top
@@ -29,7 +32,8 @@ func TestCalculateThumbPosition(t *testing.T) {
 }
 
 func TestScrollMethods(t *testing.T) {
-	sb := New()
+	themeManager := styles.NewManager(styles.ThemeDark)
+	sb := New(themeManager)
 	sb.SetDimensions(10, 100)
 
 	t.Run("ScrollDown", func(t *testing.T) {

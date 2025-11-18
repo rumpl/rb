@@ -96,12 +96,14 @@ type manager struct {
 	selected      int
 	scrollOffset  int
 	visible       bool
+	themeManager  *styles.Manager
 }
 
 // New creates a new  completion component
-func New() Manager {
+func New(themeManager *styles.Manager) Manager {
 	return &manager{
-		keyMap: defaultCompletionKeyMap(),
+		keyMap:       defaultCompletionKeyMap(),
+		themeManager: themeManager,
 	}
 }
 
@@ -178,10 +180,12 @@ func (c *manager) View() string {
 		return ""
 	}
 
+	theme := c.themeManager.GetTheme()
+
 	var lines []string
 
 	if len(c.filteredItems) == 0 {
-		lines = append(lines, styles.CompletionNoResultsStyle.Render("No results found"))
+		lines = append(lines, theme.CompletionNoResultsStyle.Render("No results found"))
 	} else {
 		visibleStart := c.scrollOffset
 		visibleEnd := min(c.scrollOffset+maxItems, len(c.filteredItems))
@@ -200,16 +204,16 @@ func (c *manager) View() string {
 
 			var itemStyle lipgloss.Style
 			if isSelected {
-				itemStyle = styles.CompletionSelectedStyle
+				itemStyle = theme.CompletionSelectedStyle
 			} else {
-				itemStyle = styles.CompletionNormalStyle
+				itemStyle = theme.CompletionNormalStyle
 			}
 
 			// Pad label to maxLabelLen so descriptions align
 			paddedLabel := item.Label + strings.Repeat(" ", maxLabelLen+1-len(item.Label))
 			text := paddedLabel
 			if item.Description != "" {
-				text += " " + styles.CompletionDescStyle.Render(item.Description)
+				text += " " + theme.CompletionDescStyle.Render(item.Description)
 			}
 
 			lines = append(lines, itemStyle.Width(c.width-6).Render(text))
@@ -217,7 +221,7 @@ func (c *manager) View() string {
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return styles.CompletionBoxStyle.Render(content)
+	return theme.CompletionBoxStyle.Render(content)
 }
 
 func (c *manager) GetLayers() []*lipgloss.Layer {

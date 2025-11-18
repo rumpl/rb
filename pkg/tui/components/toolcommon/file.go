@@ -21,7 +21,8 @@ func getLanguageFromPath(path string) string {
 	return strings.TrimPrefix(ext, ".")
 }
 
-func RenderFile(path, content string, renderer *glamour.TermRenderer) string {
+func RenderFile(path, content string, renderer *glamour.TermRenderer, themeManager *styles.Manager) string {
+	theme := themeManager.GetTheme()
 	lines := strings.Split(content, "\n")
 
 	previewLines := lines
@@ -49,9 +50,9 @@ func RenderFile(path, content string, renderer *glamour.TermRenderer) string {
 		totalLines := len(lines)
 		remainingLines := totalLines - maxPreviewLines
 		output.WriteString("\n")
-		output.WriteString(styles.MutedStyle.Render("... ("))
-		output.WriteString(styles.MutedStyle.Render(fmt.Sprintf("%d", remainingLines)))
-		output.WriteString(styles.MutedStyle.Render(" more lines)"))
+		output.WriteString(theme.MutedStyle.Render("... ("))
+		output.WriteString(theme.MutedStyle.Render(fmt.Sprintf("%d", remainingLines)))
+		output.WriteString(theme.MutedStyle.Render(" more lines)"))
 	}
 
 	return output.String()

@@ -13,17 +13,19 @@ import (
 
 // Component represents a welcome message view
 type Component struct {
-	message *types.Message
-	width   int
-	height  int
+	message      *types.Message
+	width        int
+	height       int
+	themeManager *styles.Manager
 }
 
 // New creates a new welcome message component
-func New(msg *types.Message) layout.Model {
+func New(msg *types.Message, themeManager *styles.Manager) layout.Model {
 	return &Component{
-		message: msg,
-		width:   80,
-		height:  1,
+		message:      msg,
+		width:        80,
+		height:       1,
+		themeManager: themeManager,
 	}
 }
 
@@ -38,12 +40,13 @@ func (c *Component) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 func (c *Component) View() string {
 	// Render welcome message with a distinct style
 	availableWidth := max(c.width-1, 10)
-	rendered, err := markdown.NewRenderer(availableWidth).Render(c.message.Content)
+	s := c.themeManager.GetTheme()
+	rendered, err := markdown.NewRenderer(availableWidth, c.themeManager).Render(c.message.Content)
 	if err != nil {
 		wrapped := wrapText(c.message.Content, availableWidth)
-		return styles.MutedStyle.Render(wrapped)
+		return s.MutedStyle.Render(wrapped)
 	}
-	return styles.MutedStyle.Render(strings.TrimRight(rendered, "\n\r\t "))
+	return s.MutedStyle.Render(strings.TrimRight(rendered, "\n\r\t "))
 }
 
 func (c *Component) SetSize(width, height int) tea.Cmd {

@@ -114,32 +114,35 @@ type model struct {
 	selection selectionState
 
 	sessionState *service.SessionState
+	themeManager *styles.Manager
 	scrollbar    *scrollbar.Model
 
 	xPos, yPos int
 }
 
 // New creates a new message list component
-func New(a *app.App, sessionState *service.SessionState) Model {
+func New(a *app.App, sessionState *service.SessionState, themeManager *styles.Manager) Model {
 	return &model{
 		width:         120,
 		height:        24,
 		app:           a,
 		renderedItems: make(map[int]renderedItem),
 		sessionState:  sessionState,
-		scrollbar:     scrollbar.New(),
+		themeManager:  themeManager,
+		scrollbar:     scrollbar.New(themeManager),
 	}
 }
 
 // NewScrollableView creates a simple scrollable view for displaying messages in dialogs
 // This is a lightweight version that doesn't require app or session state management
-func NewScrollableView(width, height int, sessionState *service.SessionState) Model {
+func NewScrollableView(width, height int, sessionState *service.SessionState, themeManager *styles.Manager) Model {
 	return &model{
 		width:         width,
 		height:        height,
 		renderedItems: make(map[int]renderedItem),
 		sessionState:  sessionState,
-		scrollbar:     scrollbar.New(),
+		themeManager:  themeManager,
+		scrollbar:     scrollbar.New(themeManager),
 	}
 }
 
@@ -725,13 +728,13 @@ func (m *model) ScrollToBottom() tea.Cmd {
 func (m *model) createToolCallView(msg *types.Message) layout.Model {
 	// TODO: -3 because of the padding in the tool calls, we should really make
 	// our own layout system and stop messing around with these magic numbers
-	view := tool.New(msg, markdown.NewRenderer(m.width-3), m.sessionState)
+	view := tool.New(msg, markdown.NewRenderer(m.width-3, m.themeManager), m.sessionState, m.themeManager)
 	view.SetSize(m.width, 0)
 	return view
 }
 
 func (m *model) createMessageView(msg *types.Message) layout.Model {
-	view := message.New(msg)
+	view := message.New(msg, m.themeManager)
 	view.SetSize(m.width, 0)
 	return view
 }
@@ -940,10 +943,11 @@ func (m *model) highlightLine(line string, startCol, endCol int) string {
 	// before: from start to startCol (preserves original styling)
 	before := ansi.Cut(line, 0, startCol)
 
+	s := m.themeManager.GetTheme()
 	// selected: from startCol to endCol (strip styling, apply selection style)
 	selectedText := ansi.Cut(line, startCol, endCol)
 	selectedPlain := ansi.Strip(selectedText)
-	selected := styles.SelectionStyle.Render(selectedPlain)
+	selected := s.SelectionStyle.Render(selectedPlain)
 
 	// after: from endCol to end (preserves original styling)
 	after := ansi.Cut(line, endCol, plainWidth)

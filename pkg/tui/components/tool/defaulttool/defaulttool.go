@@ -18,11 +18,12 @@ import (
 // that don't have a specialized component registered.
 // It provides a standard visualization with tool name, arguments, and results.
 type Component struct {
-	message  *types.Message
-	renderer *glamour.TermRenderer
-	spinner  spinner.Spinner
-	width    int
-	height   int
+	message      *types.Message
+	renderer     *glamour.TermRenderer
+	spinner      spinner.Spinner
+	width        int
+	height       int
+	themeManager *styles.Manager
 }
 
 // New creates a new default tool component.
@@ -30,13 +31,15 @@ func New(
 	msg *types.Message,
 	renderer *glamour.TermRenderer,
 	_ *service.SessionState,
+	themeManager *styles.Manager,
 ) layout.Model {
 	return &Component{
-		message:  msg,
-		renderer: renderer,
-		spinner:  spinner.New(spinner.ModeSpinnerOnly),
-		width:    80,
-		height:   1,
+		message:      msg,
+		renderer:     renderer,
+		spinner:      spinner.New(spinner.ModeSpinnerOnly, themeManager),
+		width:        80,
+		height:       1,
+		themeManager: themeManager,
 	}
 }
 
@@ -68,7 +71,8 @@ func (c *Component) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 func (c *Component) View() string {
 	msg := c.message
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s  %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName))
+	theme := c.themeManager.GetTheme()
+	content := fmt.Sprintf("%s  %s", toolcommon.Icon(msg.ToolStatus, c.themeManager), theme.ToolCallTitleStyle.Render(displayName))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
@@ -81,8 +85,8 @@ func (c *Component) View() string {
 		c.width-1-4, 10)
 
 	if msg.ToolCall.Function.Arguments != "" {
-		content += "\n" + renderToolArgs(msg.ToolCall, availableWidth)
+		content += "\n" + renderToolArgs(msg.ToolCall, availableWidth, c.themeManager)
 	}
 
-	return toolcommon.RenderToolMessage(c.width, content)
+	return toolcommon.RenderToolMessage(c.width, content, c.themeManager)
 }

@@ -6,6 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/rumpl/rb/pkg/tui/core/layout"
+	"github.com/rumpl/rb/pkg/tui/styles"
 	"github.com/rumpl/rb/pkg/tui/types"
 )
 
@@ -17,7 +18,7 @@ type Component struct {
 }
 
 // New creates a new default message component
-func New(msg *types.Message) layout.Model {
+func New(msg *types.Message, _ *styles.Manager) layout.Model {
 	return &Component{
 		message: msg,
 		width:   80,

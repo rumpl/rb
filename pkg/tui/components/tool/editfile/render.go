@@ -37,7 +37,7 @@ type linePair struct {
 	newLineNum int
 }
 
-func renderEditFile(toolCall tools.ToolCall, width int, splitView bool, toolStatus types.ToolStatus) string {
+func renderEditFile(toolCall tools.ToolCall, width int, splitView bool, toolStatus types.ToolStatus, themeManager *styles.Manager) string {
 	var args builtin.EditFileArgs
 	if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
 		return ""
@@ -55,9 +55,9 @@ func renderEditFile(toolCall tools.ToolCall, width int, splitView bool, toolStat
 
 		diff := computeDiff(args.Path, edit.OldText, edit.NewText, toolStatus)
 		if splitView {
-			output.WriteString(renderSplitDiffWithSyntaxHighlight(diff, args.Path, width))
+			output.WriteString(renderSplitDiffWithSyntaxHighlight(diff, args.Path, width, themeManager))
 		} else {
-			output.WriteString(renderDiffWithSyntaxHighlight(diff, args.Path, width))
+			output.WriteString(renderDiffWithSyntaxHighlight(diff, args.Path, width, themeManager))
 		}
 	}
 
@@ -126,14 +126,14 @@ func normalizeDiff(diff []*udiff.Hunk) []*udiff.Hunk {
 	return diff
 }
 
-func syntaxHighlight(code, filePath string) []chromaToken {
+func syntaxHighlight(code, filePath string, themeManager *styles.Manager) []chromaToken {
 	lexer := lexers.Match(filePath)
 	if lexer == nil {
 		lexer = lexers.Fallback
 	}
 	lexer = chroma.Coalesce(lexer)
 
-	style := styles.ChromaStyle()
+	style := themeManager.ChromaStyle()
 	iterator, err := lexer.Tokenise(nil, code)
 	if err != nil {
 		return []chromaToken{{Text: code, Style: lipgloss.NewStyle()}}
@@ -173,7 +173,7 @@ func chromaToLipgloss(tokenType chroma.TokenType, style *chroma.Style) lipgloss.
 	return lipStyle
 }
 
-func renderDiffWithSyntaxHighlight(diff []*udiff.Hunk, filePath string, width int) string {
+func renderDiffWithSyntaxHighlight(diff []*udiff.Hunk, filePath string, width int, themeManager *styles.Manager) string {
 	var output strings.Builder
 	contentWidth := width - lineNumWidth
 
@@ -185,8 +185,9 @@ func renderDiffWithSyntaxHighlight(diff []*udiff.Hunk, filePath string, width in
 			lineNum := getDisplayLineNumber(&line, &oldLineNum, &newLineNum)
 			content := prepareContent(line.Content, contentWidth)
 
-			lineNumStr := styles.LineNumberStyle.Render(fmt.Sprintf("%4d ", lineNum))
-			styledLine := renderLine(content, line.Kind, filePath, contentWidth)
+			theme := themeManager.GetTheme()
+			lineNumStr := theme.LineNumberStyle.Render(fmt.Sprintf("%4d ", lineNum))
+			styledLine := renderLine(content, line.Kind, filePath, contentWidth, themeManager)
 
 			output.WriteString(lineNumStr + styledLine + "\n")
 		}
@@ -195,25 +196,26 @@ func renderDiffWithSyntaxHighlight(diff []*udiff.Hunk, filePath string, width in
 	return strings.TrimSuffix(output.String(), "\n")
 }
 
-func renderSplitDiffWithSyntaxHighlight(diff []*udiff.Hunk, filePath string, width int) string {
+func renderSplitDiffWithSyntaxHighlight(diff []*udiff.Hunk, filePath string, width int, themeManager *styles.Manager) string {
 	// Fall back to unified diff if terminal is too narrow
-	separator := styles.SeparatorStyle.Render(" │ ")
+	theme := themeManager.GetTheme()
+	separator := theme.SeparatorStyle.Render(" │ ")
 	separatorWidth := ansi.StringWidth(separator)
 	contentWidth := (width - separatorWidth - (lineNumWidth * 2)) / 2
 
 	if width < minWidth || contentWidth < 10 {
-		return renderDiffWithSyntaxHighlight(diff, filePath, width)
+		return renderDiffWithSyntaxHighlight(diff, filePath, width, themeManager)
 	}
 
 	var output strings.Builder
 
 	for _, hunk := range diff {
 		for _, pair := range pairDiffLines(hunk.Lines, hunk.FromLine, hunk.ToLine) {
-			leftSide := renderSplitSide(pair.old, pair.oldLineNum, filePath, contentWidth)
-			rightSide := renderSplitSide(pair.new, pair.newLineNum, filePath, contentWidth)
+			leftSide := renderSplitSide(pair.old, pair.oldLineNum, filePath, contentWidth, themeManager)
+			rightSide := renderSplitSide(pair.new, pair.newLineNum, filePath, contentWidth, themeManager)
 
 			line := leftSide + separator + rightSide
-			line = ensureWidth(line, width)
+			line = ensureWidth(line, width, themeManager)
 
 			output.WriteString(line + "\n")
 		}
@@ -250,27 +252,28 @@ func prepareContent(content string, maxWidth int) string {
 	return content
 }
 
-func renderLine(content string, kind udiff.OpKind, filePath string, width int) string {
-	tokens := syntaxHighlight(content, filePath)
-	lineStyle := getLineStyle(kind)
+func renderLine(content string, kind udiff.OpKind, filePath string, width int, themeManager *styles.Manager) string {
+	tokens := syntaxHighlight(content, filePath, themeManager)
+	lineStyle := getLineStyle(kind, themeManager)
 
 	rendered := renderTokensWithStyle(tokens, lineStyle)
 
 	return padToWidth(rendered, width, lineStyle)
 }
 
-func renderSplitSide(line *udiff.Line, lineNum int, filePath string, width int) string {
+func renderSplitSide(line *udiff.Line, lineNum int, filePath string, width int, themeManager *styles.Manager) string {
 	lineNumStr := formatLineNum(line, lineNum)
+	theme := themeManager.GetTheme()
 
 	if line == nil {
-		emptySpace := styles.DiffUnchangedStyle.Render(strings.Repeat(" ", width))
-		return styles.LineNumberStyle.Render(lineNumStr) + emptySpace
+		emptySpace := theme.DiffUnchangedStyle.Render(strings.Repeat(" ", width))
+		return theme.LineNumberStyle.Render(lineNumStr) + emptySpace
 	}
 
 	content := prepareContent(line.Content, width)
-	styledContent := renderLine(content, line.Kind, filePath, width)
+	styledContent := renderLine(content, line.Kind, filePath, width, themeManager)
 
-	return styles.LineNumberStyle.Render(lineNumStr) + styledContent
+	return theme.LineNumberStyle.Render(lineNumStr) + styledContent
 }
 
 func renderTokensWithStyle(tokens []chromaToken, lineStyle lipgloss.Style) string {
@@ -293,22 +296,24 @@ func padToWidth(content string, width int, style lipgloss.Style) string {
 	return content
 }
 
-func ensureWidth(line string, width int) string {
+func ensureWidth(line string, width int, themeManager *styles.Manager) string {
 	if lineWidth := ansi.StringWidth(line); lineWidth < width {
-		padding := styles.DiffUnchangedStyle.Render(strings.Repeat(" ", width-lineWidth))
+		theme := themeManager.GetTheme()
+		padding := theme.DiffUnchangedStyle.Render(strings.Repeat(" ", width-lineWidth))
 		return line + padding
 	}
 	return line
 }
 
-func getLineStyle(kind udiff.OpKind) lipgloss.Style {
+func getLineStyle(kind udiff.OpKind, themeManager *styles.Manager) lipgloss.Style {
+	theme := themeManager.GetTheme()
 	switch kind {
 	case udiff.Delete:
-		return styles.DiffRemoveStyle
+		return theme.DiffRemoveStyle
 	case udiff.Insert:
-		return styles.DiffAddStyle
+		return theme.DiffAddStyle
 	default:
-		return styles.DiffUnchangedStyle
+		return theme.DiffUnchangedStyle
 	}
 }
 

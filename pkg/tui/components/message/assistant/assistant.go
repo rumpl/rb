@@ -15,19 +15,21 @@ import (
 
 // Component represents an assistant message view
 type Component struct {
-	message *types.Message
-	width   int
-	height  int
-	spinner spinner.Spinner
+	message      *types.Message
+	width        int
+	height       int
+	spinner      spinner.Spinner
+	themeManager *styles.Manager
 }
 
 // New creates a new assistant message component
-func New(msg *types.Message) layout.Model {
+func New(msg *types.Message, themeManager *styles.Manager) layout.Model {
 	return &Component{
-		message: msg,
-		width:   80,
-		height:  1,
-		spinner: spinner.New(spinner.ModeBoth),
+		message:      msg,
+		width:        80,
+		height:       1,
+		spinner:      spinner.New(spinner.ModeBoth, themeManager),
+		themeManager: themeManager,
 	}
 }
 
@@ -52,22 +54,23 @@ func (c *Component) View() string {
 		return c.spinner.View()
 	}
 
+	s := c.themeManager.GetTheme()
 	// Account for border (1 char) + padding (2 chars left + 2 chars right) = 5 chars total
 	// But we also need to account for the border itself, so available width is width - border - padding
 	availableWidth := max(
 		// 1 for border, 4 for padding (2 left + 2 right)
 		c.width-1-4, 10)
-	rendered, err := markdown.NewRenderer(availableWidth).Render(c.message.Content)
+	rendered, err := markdown.NewRenderer(availableWidth, c.themeManager).Render(c.message.Content)
 	if err != nil {
 		// Fallback: wrap content manually if markdown renderer fails
-		wrapped := wrapText(senderPrefix(c.message.Sender)+c.message.Content, availableWidth)
-		return styles.AssistantMessageBorderStyle.Width(c.width).Render(wrapped)
+		wrapped := wrapText(c.senderPrefix(c.message.Sender)+c.message.Content, availableWidth)
+		return s.AssistantMessageBorderStyle.Width(c.width).Render(wrapped)
 	}
 
-	content := senderPrefix(c.message.Sender) + strings.TrimRight(rendered, "\n\r\t ")
+	content := c.senderPrefix(c.message.Sender) + strings.TrimRight(rendered, "\n\r\t ")
 	// Constrain the content to available width to ensure it doesn't break layout
 	content = constrainWidth(content, availableWidth)
-	return styles.AssistantMessageBorderStyle.Width(c.width).Render(content)
+	return s.AssistantMessageBorderStyle.Width(c.width).Render(content)
 }
 
 func (c *Component) SetSize(width, height int) tea.Cmd {
@@ -82,18 +85,19 @@ func (c *Component) GetSize() (width, height int) {
 
 func (c *Component) Height(width int) int {
 	var content string
+	s := c.themeManager.GetTheme()
 	if c.message.Content == "" {
 		content = c.spinner.View()
 	} else {
 		availableWidth := max(width-1-4, 10)
-		rendered, err := markdown.NewRenderer(availableWidth).Render(c.message.Content)
+		rendered, err := markdown.NewRenderer(availableWidth, c.themeManager).Render(c.message.Content)
 		if err != nil {
-			wrapped := wrapText(senderPrefix(c.message.Sender)+c.message.Content, availableWidth)
-			content = styles.AssistantMessageBorderStyle.Width(width).Render(wrapped)
+			wrapped := wrapText(c.senderPrefix(c.message.Sender)+c.message.Content, availableWidth)
+			content = s.AssistantMessageBorderStyle.Width(width).Render(wrapped)
 		} else {
-			result := senderPrefix(c.message.Sender) + strings.TrimRight(rendered, "\n\r\t ")
+			result := c.senderPrefix(c.message.Sender) + strings.TrimRight(rendered, "\n\r\t ")
 			result = constrainWidth(result, availableWidth)
-			content = styles.AssistantMessageBorderStyle.Width(width).Render(result)
+			content = s.AssistantMessageBorderStyle.Width(width).Render(result)
 		}
 	}
 	return strings.Count(content, "\n") + 1
@@ -103,11 +107,12 @@ func (c *Component) SetMessage(msg *types.Message) {
 	c.message = msg
 }
 
-func senderPrefix(sender string) string {
+func (c *Component) senderPrefix(sender string) string {
 	if sender == "" {
 		return ""
 	}
-	return styles.AgentBadgeStyle.Render("["+sender+"]") + "\n"
+	theme := c.themeManager.GetTheme()
+	return theme.AgentBadgeStyle.Render("["+sender+"]") + "\n"
 }
 
 // wrapText wraps text to the specified width

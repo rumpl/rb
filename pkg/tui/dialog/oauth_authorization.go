@@ -18,6 +18,7 @@ type oauthAuthorizationDialog struct {
 	serverURL     string
 	app           *app.App
 	keyMap        oauthAuthorizationKeyMap
+	themeManager  *styles.Manager
 }
 
 // SetSize implements [Dialog].
@@ -48,11 +49,12 @@ func defaultOAuthAuthorizationKeyMap() oauthAuthorizationKeyMap {
 }
 
 // NewOAuthAuthorizationDialog creates a new OAuth authorization confirmation dialog
-func NewOAuthAuthorizationDialog(serverURL string, appInstance *app.App) Dialog {
+func NewOAuthAuthorizationDialog(serverURL string, appInstance *app.App, themeManager *styles.Manager) Dialog {
 	return &oauthAuthorizationDialog{
-		serverURL: serverURL,
-		app:       appInstance,
-		keyMap:    defaultOAuthAuthorizationKeyMap(),
+		serverURL:    serverURL,
+		app:          appInstance,
+		keyMap:       defaultOAuthAuthorizationKeyMap(),
+		themeManager: themeManager,
 	}
 }
 
@@ -117,6 +119,7 @@ func (d *oauthAuthorizationDialog) Position() (row, col int) {
 
 // View renders the OAuth authorization confirmation dialog
 func (d *oauthAuthorizationDialog) View() string {
+	theme := d.themeManager.GetTheme()
 	// clamped width: ~60% of screen, bounded by [40, 90] and screen margin
 	dialogWidth := d.width * 60 / 100
 	if dialogWidth < 40 {
@@ -133,27 +136,27 @@ func (d *oauthAuthorizationDialog) View() string {
 	frameHorizontal := (padX * 2) + 2
 	contentWidth := max(10, dialogWidth-frameHorizontal)
 
-	dialogStyle := styles.DialogWarningStyle.
+	dialogStyle := theme.DialogWarningStyle.
 		Padding(padY, padX).
 		Width(dialogWidth)
 
-	title := styles.DialogTitleInfoStyle.
+	title := theme.DialogTitleInfoStyle.
 		Width(contentWidth).
 		Render("🔐 OAuth Authorization Required")
 
-	serverInfo := styles.InfoStyle.
+	serverInfo := theme.InfoStyle.
 		Width(contentWidth).
 		Render(fmt.Sprintf("Server: %s (remote)", d.serverURL))
 
-	description := styles.DialogContentStyle.
+	description := theme.DialogContentStyle.
 		Width(contentWidth).
 		Render("This server requires OAuth authentication to access its tools. Your browser will open automatically to complete the authorization process.")
 
-	instructions := styles.DialogHelpStyle.
+	instructions := theme.DialogHelpStyle.
 		Width(contentWidth).
 		Render("After authorizing in your browser, return here and the agent will continue automatically.")
 
-	options := styles.SuccessStyle.
+	options := theme.SuccessStyle.
 		Align(lipgloss.Center).
 		Width(contentWidth).
 		Render("Y - Authorize  |  N - Decline")

@@ -42,6 +42,7 @@ type Spinner struct {
 	tag            int
 	direction      int // 1 for forward, -1 for backward
 	pauseFrames    int
+	themeManager   *styles.Manager
 }
 
 // Default messages for the spinner
@@ -68,7 +69,7 @@ var defaultMessages = []string{
 	"Untangling yarn",
 }
 
-func New(mode Mode) Spinner {
+func New(mode Mode, themeManager *styles.Manager) Spinner {
 	return Spinner{
 		messages:       defaultMessages,
 		mode:           mode,
@@ -78,6 +79,7 @@ func New(mode Mode) Spinner {
 		id:             nextID(),
 		direction:      1,
 		pauseFrames:    0,
+		themeManager:   themeManager,
 	}
 }
 
@@ -138,6 +140,7 @@ func (s Spinner) Tick() tea.Cmd {
 }
 
 func (s Spinner) render() string {
+	theme := s.themeManager.GetTheme()
 	message := s.currentMessage
 	output := make([]rune, 0, len(message))
 
@@ -147,13 +150,13 @@ func (s Spinner) render() string {
 		var style lipgloss.Style
 		switch distance {
 		case 0:
-			style = styles.SpinnerTextBrightestStyle
+			style = theme.SpinnerTextBrightestStyle
 		case 1:
-			style = styles.SpinnerTextBrightStyle
+			style = theme.SpinnerTextBrightStyle
 		case 2:
-			style = styles.SpinnerTextDimStyle
+			style = theme.SpinnerTextDimStyle
 		default:
-			style = styles.SpinnerTextDimmestStyle
+			style = theme.SpinnerTextDimmestStyle
 		}
 
 		output = append(output, []rune(style.Render(string(char)))...)
@@ -161,7 +164,7 @@ func (s Spinner) render() string {
 
 	spinnerChars := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	spinnerChar := spinnerChars[s.frame%len(spinnerChars)]
-	spinnerStyled := styles.SpinnerCharStyle.Render(spinnerChar)
+	spinnerStyled := theme.SpinnerCharStyle.Render(spinnerChar)
 
 	switch s.mode {
 	case ModeSpinnerOnly:

@@ -20,6 +20,7 @@ type maxIterationsDialog struct {
 	maxIterations int
 	app           *app.App
 	keyMap        maxIterationsKeyMap
+	themeManager  *styles.Manager
 }
 
 // SetSize implements [Dialog].
@@ -50,11 +51,12 @@ func defaultMaxIterationsKeyMap() maxIterationsKeyMap {
 }
 
 // NewMaxIterationsDialog creates a new max iterations confirmation dialog
-func NewMaxIterationsDialog(maxIterations int, appInstance *app.App) Dialog {
+func NewMaxIterationsDialog(maxIterations int, appInstance *app.App, themeManager *styles.Manager) Dialog {
 	return &maxIterationsDialog{
 		maxIterations: maxIterations,
 		app:           appInstance,
 		keyMap:        defaultMaxIterationsKeyMap(),
+		themeManager:  themeManager,
 	}
 }
 
@@ -112,6 +114,7 @@ func (d *maxIterationsDialog) Position() (row, col int) {
 
 // View renders the max iterations confirmation dialog
 func (d *maxIterationsDialog) View() string {
+	theme := d.themeManager.GetTheme()
 	// clamped width: ~60% of screen, bounded by [36, 84] and screen margin
 	dialogWidth := d.width * 60 / 100
 	if dialogWidth < 36 {
@@ -128,16 +131,16 @@ func (d *maxIterationsDialog) View() string {
 	frameHorizontal := (padX * 2) + 2
 	contentWidth := max(10, dialogWidth-frameHorizontal)
 
-	dialogStyle := styles.DialogWarningStyle.
+	dialogStyle := theme.DialogWarningStyle.
 		Padding(padY, padX).
 		Width(dialogWidth)
 
-	title := styles.DialogTitleWarningStyle.
+	title := theme.DialogTitleWarningStyle.
 		Width(contentWidth).
 		Render("Maximum Iterations Reached")
 
 	separatorWidth := max(1, contentWidth)
-	separator := styles.DialogSeparatorStyle.
+	separator := theme.DialogSeparatorStyle.
 		Align(lipgloss.Center).
 		Width(contentWidth).
 		Render(strings.Repeat("─", separatorWidth))
@@ -145,18 +148,18 @@ func (d *maxIterationsDialog) View() string {
 	// Info section
 	infoText := fmt.Sprintf("Max Iterations: %d", d.maxIterations)
 	infoWrapped := wrapDisplayText(infoText, contentWidth)
-	infoSection := styles.DialogContentStyle.Render(infoWrapped)
+	infoSection := theme.DialogContentStyle.Render(infoWrapped)
 
 	// Message section
-	message := styles.DialogContentStyle.Render(wrapDisplayText("The agent may be stuck in a loop. This can happen with smaller or less capable models.", contentWidth))
+	message := theme.DialogContentStyle.Render(wrapDisplayText("The agent may be stuck in a loop. This can happen with smaller or less capable models.", contentWidth))
 
 	// Question section
-	question := styles.DialogQuestionStyle.
+	question := theme.DialogQuestionStyle.
 		Width(contentWidth).
 		Render(wrapDisplayText("Do you want to continue for 10 more iterations?", contentWidth))
 
 	// Options section
-	options := styles.DialogOptionsStyle.
+	options := theme.DialogOptionsStyle.
 		Width(contentWidth).
 		Render(wrapDisplayText("[Y]es    [N]o", contentWidth))
 

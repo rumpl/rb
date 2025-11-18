@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"image/color"
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
@@ -24,6 +25,7 @@ import (
 	"github.com/rumpl/rb/pkg/tui/page/chat"
 	"github.com/rumpl/rb/pkg/tui/service"
 	"github.com/rumpl/rb/pkg/tui/styles"
+	"github.com/rumpl/rb/pkg/tui/types"
 )
 
 // appModel represents the main application model
@@ -39,6 +41,9 @@ type appModel struct {
 	notification notification.Manager
 	dialog       dialog.Manager
 	completions  completion.Manager
+
+	// Theme management
+	themeManager *styles.Manager
 
 	// Session state
 	sessionState *service.SessionState
@@ -67,18 +72,20 @@ func DefaultKeyMap() KeyMap {
 // New creates and initializes a new TUI application model
 func New(a *app.App) tea.Model {
 	sessionState := service.NewSessionState()
+	themeManager := styles.NewManager(styles.ThemeDark) // Default to dark theme
 
 	t := &appModel{
 		keyMap:       DefaultKeyMap(),
 		dialog:       dialog.New(),
-		notification: notification.New(),
-		completions:  completion.New(),
+		notification: notification.New(themeManager),
+		completions:  completion.New(themeManager),
 		application:  a,
 		sessionState: sessionState,
+		themeManager: themeManager,
 	}
 
-	t.statusBar = statusbar.New(t)
-	t.chatPage = chat.New(a, sessionState)
+	t.statusBar = statusbar.New(t, themeManager)
+	t.chatPage = chat.New(a, sessionState, themeManager)
 
 	return t
 }
@@ -104,6 +111,11 @@ func (a *appModel) Init() tea.Cmd {
 // Help returns help information
 func (a *appModel) Help() help.KeyMap {
 	return core.NewSimpleHelp(a.Bindings())
+}
+
+// ThemeManager returns the theme manager
+func (a *appModel) ThemeManager() *styles.Manager {
+	return a.themeManager
 }
 
 func (a *appModel) Bindings() []key.Binding {
@@ -152,9 +164,9 @@ func (a *appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case commands.NewSessionMsg:
 		a.application.NewSession()
 		a.sessionState = service.NewSessionState()
-		a.chatPage = chat.New(a.application, a.sessionState)
+		a.chatPage = chat.New(a.application, a.sessionState, a.themeManager)
 		a.dialog = dialog.New()
-		a.statusBar = statusbar.New(a.chatPage)
+		a.statusBar = statusbar.New(a.chatPage, a.themeManager)
 
 		return a, tea.Batch(a.Init(), a.handleWindowResize(a.wWidth, a.wHeight))
 
@@ -188,6 +200,11 @@ func (a *appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case dialog.RuntimeResumeMsg:
 		a.application.Resume(msg.Response)
 		return a, nil
+
+	case types.ThemeChangeMsg:
+		a.themeManager.SetTheme(msg.Theme)
+		// Force a full redraw by sending a window resize
+		return a, nil //core.CmdHandler(tea.WindowSizeMsg{Width: a.wWidth, Height: a.wHeight})
 
 	case error:
 		a.err = msg
@@ -290,7 +307,7 @@ func (a *appModel) handleKeyPressMsg(msg tea.KeyPressMsg) tea.Cmd {
 	case key.Matches(msg, a.keyMap.CommandPalette):
 		categories := commands.BuildCommandCategories(context.Background(), a.application)
 		return core.CmdHandler(dialog.OpenDialogMsg{
-			Model: dialog.NewCommandPaletteDialog(categories),
+			Model: dialog.NewCommandPaletteDialog(categories, a.themeManager),
 		})
 	default:
 		updated, cmd := a.chatPage.Update(msg)
@@ -301,18 +318,21 @@ func (a *appModel) handleKeyPressMsg(msg tea.KeyPressMsg) tea.Cmd {
 
 // View renders the complete application interface
 func (a *appModel) View() tea.View {
+	theme := a.themeManager.GetTheme()
+
 	// Show error if present
 	if a.err != nil {
-		return toFullscreenView(styles.ErrorStyle.Render(a.err.Error()))
+		return toFullscreenView(theme.ErrorStyle.Render(a.err.Error()), theme.Colors.Background)
 	}
 
 	// Show loading if not ready
 	if !a.ready {
 		return toFullscreenView(
-			styles.CenterStyle.
+			theme.CenterStyle.
 				Width(a.wWidth).
 				Height(a.wHeight).
-				Render(styles.MutedStyle.Render("Loading...")),
+				Render(theme.MutedStyle.Render("Loading...")),
+			theme.Colors.Background,
 		)
 	}
 
@@ -354,17 +374,17 @@ func (a *appModel) View() tea.View {
 		}
 
 		canvas := lipgloss.NewCanvas(allLayers...)
-		return toFullscreenView(canvas.Render())
+		return toFullscreenView(canvas.Render(), theme.Colors.Background)
 	}
 
-	return toFullscreenView(baseView)
+	return toFullscreenView(baseView, theme.Colors.Background)
 }
 
-func toFullscreenView(content string) tea.View {
+func toFullscreenView(content string, bgColor color.Color) tea.View {
 	view := tea.NewView(content)
 	view.AltScreen = true
 	view.MouseMode = tea.MouseModeCellMotion
-	view.BackgroundColor = styles.Background
+	view.BackgroundColor = bgColor
 
 	return view
 }

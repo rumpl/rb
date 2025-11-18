@@ -9,22 +9,25 @@ import (
 
 	"github.com/rumpl/rb/pkg/tui/components/markdown"
 	"github.com/rumpl/rb/pkg/tui/core/layout"
+	"github.com/rumpl/rb/pkg/tui/styles"
 	"github.com/rumpl/rb/pkg/tui/types"
 )
 
 // Component represents a shell output message view
 type Component struct {
-	message *types.Message
-	width   int
-	height  int
+	message      *types.Message
+	width        int
+	height       int
+	themeManager *styles.Manager
 }
 
 // New creates a new shell output message component
-func New(msg *types.Message) layout.Model {
+func New(msg *types.Message, themeManager *styles.Manager) layout.Model {
 	return &Component{
-		message: msg,
-		width:   80,
-		height:  1,
+		message:      msg,
+		width:        80,
+		height:       1,
+		themeManager: themeManager,
 	}
 }
 
@@ -38,7 +41,7 @@ func (c *Component) Update(msg tea.Msg) (layout.Model, tea.Cmd) {
 
 func (c *Component) View() string {
 	availableWidth := max(c.width-1, 10)
-	if rendered, err := markdown.NewRenderer(availableWidth).Render(fmt.Sprintf("```console\n%s\n```", c.message.Content)); err == nil {
+	if rendered, err := markdown.NewRenderer(availableWidth, c.themeManager).Render(fmt.Sprintf("```console\n%s\n```", c.message.Content)); err == nil {
 		return strings.TrimRight(rendered, "\n\r\t ")
 	}
 	wrapped := wrapText(c.message.Content, availableWidth)

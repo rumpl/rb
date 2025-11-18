@@ -8,6 +8,8 @@ import (
 	"github.com/rumpl/rb/pkg/app"
 	"github.com/rumpl/rb/pkg/feedback"
 	"github.com/rumpl/rb/pkg/tui/core"
+	"github.com/rumpl/rb/pkg/tui/styles"
+	"github.com/rumpl/rb/pkg/tui/types"
 )
 
 // Session commands
@@ -111,12 +113,39 @@ func builtInFeedbackCommands() []Item {
 	}
 }
 
+func builtInThemeCommands() []Item {
+	return []Item{
+		{
+			ID:          "theme.dark",
+			Label:       "Dark Theme",
+			Description: "Switch to dark theme",
+			Category:    "Theme",
+			Execute: func() tea.Cmd {
+				return core.CmdHandler(types.ThemeChangeMsg{Theme: styles.ThemeDark})
+			},
+		},
+		{
+			ID:          "theme.light",
+			Label:       "Light Theme",
+			Description: "Switch to light theme",
+			Category:    "Theme",
+			Execute: func() tea.Cmd {
+				return core.CmdHandler(types.ThemeChangeMsg{Theme: styles.ThemeLight})
+			},
+		},
+	}
+}
+
 // BuildCommandCategories builds the list of command categories for the command palette
 func BuildCommandCategories(ctx context.Context, application *app.App) []Category {
 	categories := []Category{
 		{
 			Name:     "Session",
 			Commands: BuiltInSessionCommands(),
+		},
+		{
+			Name:     "Theme",
+			Commands: builtInThemeCommands(),
 		},
 		{
 			Name:     "Feedback",

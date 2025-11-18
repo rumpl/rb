@@ -10,10 +10,13 @@ import (
 	"github.com/rumpl/rb/pkg/tui/components/tool"
 	"github.com/rumpl/rb/pkg/tui/core/layout"
 	"github.com/rumpl/rb/pkg/tui/service"
+	"github.com/rumpl/rb/pkg/tui/styles"
 	"github.com/rumpl/rb/pkg/tui/types"
 )
 
 func TestToolFactory(t *testing.T) {
+	themeManager := styles.NewManager(styles.ThemeDark)
+
 	t.Run("Create with registered builder", func(t *testing.T) {
 		registry := tool.NewRegistry()
 		factory := tool.NewFactory(registry)
@@ -23,6 +26,7 @@ func TestToolFactory(t *testing.T) {
 			msg *types.Message,
 			renderer *glamour.TermRenderer,
 			sessionState *service.SessionState,
+			_ *styles.Manager,
 		) layout.Model {
 			called = true
 			return nil
@@ -37,7 +41,7 @@ func TestToolFactory(t *testing.T) {
 				},
 			},
 		}
-		factory.Create(msg, nil, nil)
+		factory.Create(msg, nil, nil, themeManager)
 
 		assert.True(t, called, "Custom builder should be called")
 	})
@@ -53,7 +57,7 @@ func TestToolFactory(t *testing.T) {
 				},
 			},
 		}
-		component := factory.Create(msg, nil, nil)
+		component := factory.Create(msg, nil, nil, themeManager)
 
 		assert.NotNil(t, component, "Should create default component")
 	})
@@ -66,7 +70,7 @@ func TestToolFactory(t *testing.T) {
 				},
 			},
 		}
-		component := tool.New(msg, nil, nil)
+		component := tool.New(msg, nil, nil, themeManager)
 
 		assert.NotNil(t, component, "Should create component from default factory")
 	})

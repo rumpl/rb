@@ -16,20 +16,23 @@ import (
 
 // Component is a specialized component for rendering transfer_task tool calls.
 type Component struct {
-	message  *types.Message
-	renderer *glamour.TermRenderer
-	width    int
+	message      *types.Message
+	renderer     *glamour.TermRenderer
+	width        int
+	themeManager *styles.Manager
 }
 
 func New(
 	msg *types.Message,
 	renderer *glamour.TermRenderer,
 	_ *service.SessionState,
+	themeManager *styles.Manager,
 ) layout.Model {
 	return &Component{
-		message:  msg,
-		renderer: renderer,
-		width:    80,
+		message:      msg,
+		renderer:     renderer,
+		width:        80,
+		themeManager: themeManager,
 	}
 }
 
@@ -52,9 +55,10 @@ func (c *Component) View() string {
 		return "" // TODO: Partial tool call
 	}
 
-	badge := styles.TransferBadgeStyle.Render(c.message.Sender + " -> " + params.Agent + ":")
-	content := styles.MutedStyle.Render(params.Task)
+	theme := c.themeManager.GetTheme()
+	badge := theme.TransferBadgeStyle.Render(c.message.Sender + " -> " + params.Agent + ":")
+	content := theme.MutedStyle.Render(params.Task)
 
 	body := badge + "\n" + content
-	return toolcommon.RenderToolMessage(c.width, body)
+	return toolcommon.RenderToolMessage(c.width, body, c.themeManager)
 }

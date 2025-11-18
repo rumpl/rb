@@ -14,14 +14,16 @@ import (
 
 // SidebarComponent represents the todo display component for the sidebar
 type SidebarComponent struct {
-	manager *service.TodoManager
-	width   int
+	manager      *service.TodoManager
+	width        int
+	themeManager *styles.Manager
 }
 
-func NewSidebarComponent(manager *service.TodoManager) *SidebarComponent {
+func NewSidebarComponent(manager *service.TodoManager, themeManager *styles.Manager) *SidebarComponent {
 	return &SidebarComponent{
-		manager: manager,
-		width:   20,
+		manager:      manager,
+		width:        20,
+		themeManager: themeManager,
 	}
 }
 
@@ -58,24 +60,26 @@ func (c *SidebarComponent) SetTodos(toolCall tools.ToolCall) error {
 }
 
 func (c *SidebarComponent) Render() string {
+	theme := c.themeManager.GetTheme()
 	if len(c.manager.GetTodos()) == 0 {
 		return ""
 	}
 
 	var content strings.Builder
-	content.WriteString(styles.HighlightStyle.Render("TODOs"))
+	content.WriteString(theme.HighlightStyle.Render("TODOs"))
 	content.WriteString("\n")
 
 	for _, todo := range c.manager.GetTodos() {
-		content.WriteString(renderTodoLine(todo, c.width))
+		content.WriteString(c.renderTodoLine(todo, c.width))
 		content.WriteString("\n")
 	}
 
 	return content.String()
 }
 
-func renderTodoLine(todo types.Todo, maxWidth int) string {
-	icon, style := renderTodoIcon(todo.Status)
+func (c *SidebarComponent) renderTodoLine(todo types.Todo, maxWidth int) string {
+	theme := c.themeManager.GetTheme()
+	icon, style := renderTodoIcon(todo.Status, &theme)
 
 	description := todo.Description
 	maxDescWidth := max(maxWidth-2, 3)

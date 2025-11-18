@@ -27,6 +27,7 @@ type commandPaletteDialog struct {
 	filtered      []commands.Item
 	selected      int
 	keyMap        commandPaletteKeyMap
+	themeManager  *styles.Manager
 }
 
 // commandPaletteKeyMap defines key bindings for the command palette
@@ -60,7 +61,7 @@ func defaultCommandPaletteKeyMap() commandPaletteKeyMap {
 }
 
 // NewCommandPaletteDialog creates a new command palette dialog
-func NewCommandPaletteDialog(categories []commands.Category) Dialog {
+func NewCommandPaletteDialog(categories []commands.Category, themeManager *styles.Manager) Dialog {
 	ti := textinput.New()
 	ti.Placeholder = "Type to search commands..."
 	ti.Focus()
@@ -74,11 +75,12 @@ func NewCommandPaletteDialog(categories []commands.Category) Dialog {
 	}
 
 	return &commandPaletteDialog{
-		textInput:  ti,
-		categories: categories,
-		filtered:   allCommands,
-		selected:   0,
-		keyMap:     defaultCommandPaletteKeyMap(),
+		textInput:    ti,
+		categories:   categories,
+		filtered:     allCommands,
+		selected:     0,
+		keyMap:       defaultCommandPaletteKeyMap(),
+		themeManager: themeManager,
 	}
 }
 
@@ -171,17 +173,18 @@ func (d *commandPaletteDialog) filterCommands() {
 
 // View renders the command palette dialog
 func (d *commandPaletteDialog) View() string {
+	theme := d.themeManager.GetTheme()
 	dialogWidth := max(min(d.width*80/100, 70), 80)
 
 	maxHeight := min(d.height*70/100, 30)
 	contentWidth := dialogWidth - 6
 
-	title := styles.DialogTitleStyle.Width(contentWidth).Render("Commands")
+	title := theme.DialogTitleStyle.Width(contentWidth).Render("Commands")
 
 	d.textInput.SetWidth(contentWidth)
 	searchInput := d.textInput.View()
 
-	separator := styles.DialogSeparatorStyle.
+	separator := theme.DialogSeparatorStyle.
 		Width(contentWidth).
 		Render(strings.Repeat("─", contentWidth))
 
@@ -206,7 +209,7 @@ func (d *commandPaletteDialog) View() string {
 			break
 		}
 
-		commandList = append(commandList, styles.PaletteCategoryStyle.Render(catName))
+		commandList = append(commandList, theme.PaletteCategoryStyle.Render(catName))
 		itemCount++
 
 		for _, cmd := range categoryMap[catName] {
@@ -223,14 +226,14 @@ func (d *commandPaletteDialog) View() string {
 	}
 
 	if len(d.filtered) == 0 {
-		commandList = append(commandList, "", styles.DialogContentStyle.
+		commandList = append(commandList, "", theme.DialogContentStyle.
 			Italic(true).
 			Align(lipgloss.Center).
 			Width(contentWidth).
 			Render("No commands found"))
 	}
 
-	help := styles.DialogHelpStyle.
+	help := theme.DialogHelpStyle.
 		Width(contentWidth).
 		Render("↑/↓ navigate • enter execute • esc close")
 
@@ -243,23 +246,24 @@ func (d *commandPaletteDialog) View() string {
 	parts = append(parts, commandList...)
 	parts = append(parts, "", help)
 
-	return styles.DialogStyle.
+	return theme.DialogStyle.
 		Width(dialogWidth).
 		Render(lipgloss.JoinVertical(lipgloss.Left, parts...))
 }
 
 // renderCommand renders a single command in the list
 func (d *commandPaletteDialog) renderCommand(cmd commands.Item, selected bool) string {
+	theme := d.themeManager.GetTheme()
 	text := "  " + cmd.Label
 	if cmd.Description != "" {
 		text += " - " + cmd.Description
 	}
 
 	if selected {
-		return styles.PaletteSelectedStyle.Render(text)
+		return theme.PaletteSelectedStyle.Render(text)
 	}
 
-	return styles.PaletteUnselectedStyle.Render(text)
+	return theme.PaletteUnselectedStyle.Render(text)
 }
 
 // Position calculates the position to center the dialog

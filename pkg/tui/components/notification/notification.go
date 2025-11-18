@@ -51,11 +51,13 @@ type notificationItem struct {
 type Manager struct {
 	width, height int
 	items         []notificationItem
+	themeManager  *styles.Manager
 }
 
-func New() Manager {
+func New(themeManager *styles.Manager) Manager {
 	return Manager{
-		items: make([]notificationItem, 0),
+		items:        make([]notificationItem, 0),
+		themeManager: themeManager,
 	}
 }
 
@@ -119,6 +121,8 @@ func (n *Manager) View() string {
 		return ""
 	}
 
+	theme := n.themeManager.GetTheme()
+
 	var views []string
 	for i := len(n.items) - 1; i >= 0; i-- {
 		item := n.items[i]
@@ -127,13 +131,13 @@ func (n *Manager) View() string {
 		var style lipgloss.Style
 		switch item.Type {
 		case TypeError:
-			style = styles.NotificationErrorStyle
+			style = theme.NotificationErrorStyle
 		case TypeWarning:
-			style = styles.NotificationWarningStyle
+			style = theme.NotificationWarningStyle
 		case TypeInfo:
-			style = styles.NotificationInfoStyle
+			style = theme.NotificationInfoStyle
 		default:
-			style = styles.NotificationStyle
+			style = theme.NotificationStyle
 		}
 
 		// Apply max width constraint and word wrapping

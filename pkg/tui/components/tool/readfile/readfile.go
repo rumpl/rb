@@ -19,11 +19,12 @@ import (
 
 // Component is a specialized component for rendering read_file tool calls.
 type Component struct {
-	message  *types.Message
-	renderer *glamour.TermRenderer
-	spinner  spinner.Spinner
-	width    int
-	height   int
+	message      *types.Message
+	renderer     *glamour.TermRenderer
+	spinner      spinner.Spinner
+	width        int
+	height       int
+	themeManager *styles.Manager
 }
 
 // New creates a new read file component.
@@ -31,20 +32,22 @@ func New(
 	msg *types.Message,
 	renderer *glamour.TermRenderer,
 	_ *service.SessionState,
+	themeManager *styles.Manager,
 ) layout.Model {
 	return &Component{
-		message:  msg,
-		renderer: renderer,
-		spinner:  spinner.New(spinner.ModeSpinnerOnly),
-		width:    80,
-		height:   1,
+		message:      msg,
+		renderer:     renderer,
+		spinner:      spinner.New(spinner.ModeSpinnerOnly, themeManager),
+		width:        80,
+		height:       1,
+		themeManager: themeManager,
 	}
 }
 
 func (c *Component) SetSize(width, height int) tea.Cmd {
 	c.width = width
 	c.height = height
-	c.renderer = markdown.NewRenderer(toolcommon.ContentWidthFromContainer(width))
+	c.renderer = markdown.NewRenderer(toolcommon.ContentWidthFromContainer(width), c.themeManager)
 	return nil
 }
 
@@ -75,11 +78,12 @@ func (c *Component) View() string {
 	}
 
 	displayName := msg.ToolDefinition.DisplayName()
-	content := fmt.Sprintf("%s %s %s", toolcommon.Icon(msg.ToolStatus), styles.ToolCallTitleStyle.Render(displayName), styles.MutedStyle.Render(args.Path))
+	theme := c.themeManager.GetTheme()
+	content := fmt.Sprintf("%s %s %s", toolcommon.Icon(msg.ToolStatus, c.themeManager), theme.ToolCallTitleStyle.Render(displayName), theme.MutedStyle.Render(args.Path))
 
 	if msg.ToolStatus == types.ToolStatusPending || msg.ToolStatus == types.ToolStatusRunning {
 		content += " " + c.spinner.View()
 	}
 
-	return toolcommon.RenderToolMessage(c.width, content)
+	return toolcommon.RenderToolMessage(c.width, content, c.themeManager)
 }

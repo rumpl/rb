@@ -9,7 +9,7 @@ import (
 	"github.com/rumpl/rb/pkg/tui/styles"
 )
 
-func renderToolArgs(toolCall tools.ToolCall, width int) string {
+func renderToolArgs(toolCall tools.ToolCall, width int, themeManager *styles.Manager) string {
 	decoder := json.NewDecoder(strings.NewReader(toolCall.Function.Arguments))
 
 	tok, err := decoder.Token()
@@ -45,7 +45,8 @@ func renderToolArgs(toolCall tools.ToolCall, width int) string {
 	}
 	_, _ = decoder.Token()
 
-	style := styles.ToolCallArgs.Width(width)
+	theme := themeManager.GetTheme()
+	style := theme.ToolCallArgs.Width(width)
 
 	var md strings.Builder
 	for i, kv := range kvs {
@@ -76,7 +77,7 @@ func renderToolArgs(toolCall tools.ToolCall, width int) string {
 		// Wrap long lines in content
 		wrappedContent := wrapContentLines(content, contentWidth)
 
-		fmt.Fprintf(&md, "%s:\n%s", styles.ToolCallArgKey.Render(kv.Key), wrappedContent)
+		fmt.Fprintf(&md, "%s:\n%s", theme.ToolCallArgKey.Render(kv.Key), wrappedContent)
 		if !strings.HasSuffix(wrappedContent, "\n") {
 			md.WriteString("\n")
 		}
