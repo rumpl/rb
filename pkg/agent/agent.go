@@ -23,6 +23,7 @@ type Agent struct {
 	toolsets            []*StartableToolSet
 	models              []provider.Provider
 	subAgents           []*Agent
+	handoffs            []*Agent
 	parents             []*Agent
 	addDate             bool
 	addEnvironmentInfo  bool
@@ -128,6 +129,10 @@ func (a *Agent) WelcomeMessage() string {
 // SubAgents returns the list of sub-agent names
 func (a *Agent) SubAgents() []*Agent {
 	return a.subAgents
+}
+
+func (a *Agent) Handoffs() []*Agent {
+	return a.handoffs
 }
 
 // Parents returns the list of parent agent names

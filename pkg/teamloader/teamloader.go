@@ -185,6 +185,9 @@ func LoadFrom(ctx context.Context, source AgentSource, runtimeConfig config.Runt
 		}
 
 		if len(agentConfig.SubAgents) > 0 {
+			agentTools = append(agentTools, builtin.NewTransferTaskTool())
+		}
+		if len(agentConfig.Handoffs) > 0 {
 			agentTools = append(agentTools, builtin.NewHandoffTool())
 		}
 
@@ -212,6 +215,17 @@ func LoadFrom(ctx context.Context, source AgentSource, runtimeConfig config.Runt
 
 		if a, exists := agentsByName[name]; exists && len(subAgents) > 0 {
 			agent.WithSubAgents(subAgents...)(a)
+		}
+		if len(agentConfig.Handoffs) > 0 {
+			handoffs := make([]*agent.Agent, 0, len(agentConfig.Handoffs))
+			for _, handoffName := range agentConfig.Handoffs {
+				if handoffAgent, exists := agentsByName[handoffName]; exists {
+					handoffs = append(handoffs, handoffAgent)
+				}
+			}
+			if a, exists := agentsByName[name]; exists && len(handoffs) > 0 {
+				agent.WithHandoffs(handoffs...)(a)
+			}
 		}
 	}
 

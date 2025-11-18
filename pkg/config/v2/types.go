@@ -9,7 +9,7 @@ type Config struct {
 	Version  string                 `json:"version,omitempty"`
 	Agents   map[string]AgentConfig `json:"agents,omitempty"`
 	Models   map[string]ModelConfig `json:"models,omitempty"`
-	Metadata Metadata               `json:"metadata,omitempty"`
+	Metadata Metadata               `json:"metadata"`
 }
 
 // AgentConfig represents a single agent configuration
@@ -20,6 +20,7 @@ type AgentConfig struct {
 	Toolsets           []Toolset         `json:"toolsets,omitempty"`
 	Instruction        string            `json:"instruction,omitempty"`
 	SubAgents          []string          `json:"sub_agents,omitempty"`
+	Handoffs           []string          `json:"handoffs,omitempty"`
 	AddDate            bool              `json:"add_date,omitempty"`
 	AddEnvironmentInfo bool              `json:"add_environment_info,omitempty"`
 	CodeModeTools      bool              `json:"code_mode_tools,omitempty"`

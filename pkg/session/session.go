@@ -325,25 +325,24 @@ func (s *Session) GetMessages(ctx context.Context, a *agent.Agent) []chat.Messag
 
 	var messages []chat.Message
 
-	// Get all agents in the team (sub-agents and parents)
-	allAgents := append(a.SubAgents(), a.Parents()...)
+	handoffs := a.Handoffs()
 
 	// Only add the multi-agent system prompt if there are other agents available
-	if len(allAgents) > 0 {
+	if len(handoffs) > 0 {
 		agentsInfo := ""
 		var validAgentIDs []string
-		for _, agent := range allAgents {
+		for _, agent := range handoffs {
 			agentsInfo += "ID: " + agent.Name() + " | Name: " + agent.Name() + " | Description: " + agent.Description() + "\n"
 			validAgentIDs = append(validAgentIDs, agent.Name())
 		}
 
 		messages = append(messages, chat.Message{
 			Role:    chat.MessageRoleSystem,
-			Content: "You are part of a multi-agent team. Your goal is to answer the user query in the most helpful way possible.\n\nAvailable agents in your team:\n" + agentsInfo + "\nYou can hand off the conversation to any of these agents at any time by using the `handoff` function with their ID. The valid agent IDs are: " + strings.Join(validAgentIDs, ", ") + ".\n\nWhen to hand off:\n- If another agent's description indicates they are better suited for the current task or question\n\n- If any of the tools of the agent indicate that this agent is able to respond correctly- If the user explicitly asks for a specific agent\n- If you need specialized capabilities that another agent provides\n\nIf you are the best agent to handle the current request based on your capabilities and description, respond directly. When transferring to another agent, use only the function call without generating additional text.\n\n Once you are done, handoff the conversation to the root agent.",
+			Content: "You are part of a multi-agent team. Your goal is to answer the user query in the most helpful way possible.\n\nAvailable agents in your team:\n" + agentsInfo + "\nYou can hand off the conversation to any of these agents at any time by using the `handoff` function with their ID. The valid agent IDs are: " + strings.Join(validAgentIDs, ", ") + ".\n\nWhen to hand off:\n- If another agent's description indicates they are better suited for the current task or question\n\n- If any of the tools of the agent indicate that this agent is able to respond correctly- If the user explicitly asks for a specific agent\n- If you need specialized capabilities that another agent provides\n\nIf you are the best agent to handle the current request based on your capabilities and description, respond directly. When handing off to another agent, use only the function call without generating additional text.",
 		})
 
 		// Add information about tools available to other agents
-		otherAgentsToolsInfo := s.buildOtherAgentsToolsInfo(allAgents)
+		otherAgentsToolsInfo := s.buildOtherAgentsToolsInfo(handoffs)
 		if otherAgentsToolsInfo != "" {
 			messages = append(messages, chat.Message{
 				Role:    chat.MessageRoleSystem,
@@ -352,6 +351,21 @@ func (s *Session) GetMessages(ctx context.Context, a *agent.Agent) []chat.Messag
 		}
 	}
 
+	if a.HasSubAgents() {
+		subAgents := append(a.SubAgents(), a.Parents()...)
+
+		subAgentsStr := ""
+		var validAgentIDs []string
+		for _, subAgent := range subAgents {
+			subAgentsStr += "ID: " + subAgent.Name() + " | Name: " + subAgent.Name() + " | Description: " + subAgent.Description() + "\n"
+			validAgentIDs = append(validAgentIDs, subAgent.Name())
+		}
+
+		messages = append(messages, chat.Message{
+			Role:    chat.MessageRoleSystem,
+			Content: "You are a multi-agent system, make sure to answer the user query in the most helpful way possible. You have access to these sub-agents:\n" + subAgentsStr + "\nIMPORTANT: You can ONLY transfer tasks to the agents listed above using their ID. The valid agent IDs are: " + strings.Join(validAgentIDs, ", ") + ". You MUST NOT attempt to transfer to any other agent IDs - doing so will cause system errors.\n\nIf you are the best to answer the question according to your description, you can answer it.\n\nIf another agent is better for answering the question according to its description, call `transfer_task` function to transfer the question to that agent using the agent's ID. When transferring, do not generate any text other than the function call.\n\n",
+		})
+	}
 	content := a.Instruction(ctx)
 
 	if a.AddDate() {
