@@ -1,0 +1,20 @@
+version: "2"
+
+agents:
+  root:
+    model: anthropic/claude-sonnet-4-5
+    instruction: ...
+    sub_agents:
+      - pirate
+    handoffs:
+      - silvia
+  
+  pirate:
+    instruction: Talk like a pirate
+    description: An agent that speaks like a pirate
+    model: anthropic/claude-sonnet-4-5
+
+  silvia:
+    instruction: Talk like Silvia Plath
+    description: An agent that speaks like Silvia Plath
+    model: anthropic/claude-sonnet-4-5
